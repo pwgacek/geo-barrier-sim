@@ -1,4 +1,43 @@
-out
-build
-.gradle
-.idea
+# Gradle
+.gradle/
+build/
+
+# Gradle wrapper
+!gradle/wrapper/gradle-wrapper.jar
+
+# Java
+*.class
+*.log
+*.out
+*.jar
+*.war
+*.ear
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# NetBeans
+.nb-gradle/
+
+# Maven
+target/
+
+# Gradle-specific files
+gradle-app.setting
+gradle-wrapper.jar
+gradle-wrapper.properties
+
+# Temporary files
+*.swp
+*.swo
