@@ -1,17 +1,12 @@
 package agh.ics.oop.gui;
 
-import agh.ics.oop.conditions.MapConditions;
-import agh.ics.oop.conditions.SimulationConditions;
-import agh.ics.oop.gui.visualization.MapHandlerGridPane;
-import agh.ics.oop.gui.options.OptionsGridPane;
-import agh.ics.oop.maps.AbstractWorldMap;
-import agh.ics.oop.maps.GrassField;
-import agh.ics.oop.maps.TorusGrassField;
+import agh.ics.oop.simulation.SimulationConditions;
+import agh.ics.oop.gui.options.OptionsVBox;
+import agh.ics.oop.gui.visualization.MapHandlerHBox;
+import agh.ics.oop.map.WorldMap;
 import javafx.application.Application;
 
 import javafx.application.Platform;
-
-import javafx.geometry.HPos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -23,88 +18,60 @@ import javafx.stage.Stage;
 public class  App extends Application  {
 
 
+    @Override
     public void start(Stage primaryStage){
-        GridPane startGridPane = new GridPane();
-        OptionsGridPane firstMapOptionsGridPane = new OptionsGridPane("First Map");
-        OptionsGridPane secondMapOptionsGridPane = new OptionsGridPane("Second Map");
+        // Create label and button
+        OptionsVBox optionsGridPane = new OptionsVBox();
 
-        GridPane.setConstraints(firstMapOptionsGridPane,0,0);
-        GridPane.setConstraints(secondMapOptionsGridPane,1,0);
-        startGridPane.getColumnConstraints().add(new ColumnConstraints(200));
-        startGridPane.getColumnConstraints().add(new ColumnConstraints(200));
-        startGridPane.getChildren().add(firstMapOptionsGridPane);
-        startGridPane.getChildren().add(secondMapOptionsGridPane);
-
-        Button readyBtn = new Button("Done");
-        readyBtn.setMinWidth(200);
-        GridPane.setConstraints(readyBtn,0,1,2,1);
-        GridPane.setHalignment(readyBtn, HPos.CENTER);
-        startGridPane.getChildren().add(readyBtn);
+        Button startButton = new Button("Start simulation");
 
 
-        Scene startScene = new Scene(startGridPane,400,700);
+
+        // Layout with vertical centering
+        VBox vbox = new VBox(50, optionsGridPane, startButton); // 10px spacing
+        vbox.setAlignment(javafx.geometry.Pos.CENTER); // Center elements
+
+        // Scene and Stage setup
+        Scene scene = new Scene(vbox, 400, 450);
+        primaryStage.setMinHeight(scene.getHeight());
+        primaryStage.setMinWidth(scene.getWidth());
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Simulation");
         primaryStage.setResizable(false);
-
-        primaryStage.setScene(startScene);
         primaryStage.show();
 
-
-        readyBtn.setOnAction(e -> {
+        startButton.setOnAction(e -> {
             try{
-                if((firstMapOptionsGridPane.getWidthCondition()+1)*(firstMapOptionsGridPane.getHeightCondition()+1) < firstMapOptionsGridPane.getAnimalQuantityCondition())throw new IllegalArgumentException("Map doesn't have enough space for animals!");
-                if((secondMapOptionsGridPane.getWidthCondition()+1)*(secondMapOptionsGridPane.getHeightCondition()+1) < secondMapOptionsGridPane.getAnimalQuantityCondition())throw new IllegalArgumentException("Map doesn't have enough space for animals!");
-                if(firstMapOptionsGridPane.getMoveEnergyCondition()==0)throw new IllegalArgumentException("Move Energy should be above 0");
-                if(secondMapOptionsGridPane.getMoveEnergyCondition()==0)throw new IllegalArgumentException("Move Energy should be above 0");
-                if(firstMapOptionsGridPane.getAnimalQuantityCondition()<10)throw new IllegalArgumentException("Minimum quantity of animals is 10");
-                if(secondMapOptionsGridPane.getAnimalQuantityCondition()<10)throw new IllegalArgumentException("Minimum quantity of animals is 10");
+                if((optionsGridPane.getSizeCondition()+1)*(optionsGridPane.getSizeCondition()+1) < optionsGridPane.getAnimalQuantityCondition())throw new IllegalArgumentException("Map doesn't have enough space for animals!");
+                if(optionsGridPane.getMoveEnergyCondition()==0)throw new IllegalArgumentException("Move Energy should be above 0");
+                if(optionsGridPane.getAnimalQuantityCondition()<10)throw new IllegalArgumentException("Minimum quantity of animals is 10");
+
+                SimulationConditions simulationConditions = new SimulationConditions(50,false,optionsGridPane.getStartEnergyCondition(),optionsGridPane.getMoveEnergyCondition(),optionsGridPane.getPlantEnergyCondition(),optionsGridPane.getAnimalQuantityCondition());
+
+                WorldMap worldMap = new WorldMap(optionsGridPane.getSizeCondition(), optionsGridPane.getPlantGrowChanceCondition());
 
 
-                SimulationConditions firstSimulationConditions = new SimulationConditions(50,false,firstMapOptionsGridPane.getStartEnergyCondition(),firstMapOptionsGridPane.getMoveEnergyCondition(),firstMapOptionsGridPane.getPlantEnergyCondition(),firstMapOptionsGridPane.getAnimalQuantityCondition(),firstMapOptionsGridPane.isEvolutionMagical());
-                SimulationConditions secondSimulationConditions = new SimulationConditions(50,false,secondMapOptionsGridPane.getStartEnergyCondition(),secondMapOptionsGridPane.getMoveEnergyCondition(),secondMapOptionsGridPane.getPlantEnergyCondition(),secondMapOptionsGridPane.getAnimalQuantityCondition(),secondMapOptionsGridPane.isEvolutionMagical());
+                MapHandlerHBox mapHandlerHBox = new MapHandlerHBox(worldMap,simulationConditions);
 
-                MapConditions firstMapConditions = new MapConditions(firstMapOptionsGridPane.getWidthCondition(), firstMapOptionsGridPane.getHeightCondition(), firstMapOptionsGridPane.getJungleRatio());
-                MapConditions secondMapConditions = new MapConditions(secondMapOptionsGridPane.getWidthCondition(), secondMapOptionsGridPane.getHeightCondition(), secondMapOptionsGridPane.getJungleRatio());
+                Scene simulationScene = new Scene(mapHandlerHBox);
 
-
-                AbstractWorldMap firstMap = new TorusGrassField(firstMapConditions);
-                AbstractWorldMap secondMap = new GrassField(secondMapConditions);
-
-
-
-                GridPane generalGridPane = new GridPane();
-
-                MapHandlerGridPane firstMapPane = new MapHandlerGridPane(firstMap,firstSimulationConditions);
-                MapHandlerGridPane secondMapPane = new MapHandlerGridPane(secondMap,secondSimulationConditions);
-
-
-                GridPane.setConstraints(firstMapPane,0,0);
-                GridPane.setConstraints(secondMapPane,1,0);
-
-                generalGridPane.getChildren().add(firstMapPane);
-                generalGridPane.getChildren().add(secondMapPane);
-
-
-                generalGridPane.getColumnConstraints().add(new ColumnConstraints(640));
-                generalGridPane.getColumnConstraints().add(new ColumnConstraints(640));
-                generalGridPane.getRowConstraints().add(new RowConstraints(670));
-
-
-
-                Scene simulationScene = new Scene(generalGridPane,1280, 670);
-
-
-
-
-
+                primaryStage.setFullScreen(true);
+                primaryStage.setMinHeight(scene.getHeight());
+                primaryStage.setMinWidth(scene.getWidth());
                 primaryStage.setScene(simulationScene);
-                firstMapPane.startSimulation();
-                secondMapPane.startSimulation();
+                primaryStage.setTitle("Simulation");
+                primaryStage.setResizable(false);
+
+
+
+
+                mapHandlerHBox.startSimulation();
 
 
 
 
                 primaryStage.setOnCloseRequest(t -> {
-                    if(firstSimulationConditions.isRunning() || secondSimulationConditions.isRunning())
+                    if(simulationConditions.isRunning())
                     {
                         Alert alert = new Alert(Alert.AlertType.INFORMATION);
                         alert.setTitle("Sth went wrong...");
@@ -113,8 +80,7 @@ public class  App extends Application  {
                         t.consume();
                     }
                     else{
-                        firstMapPane.terminateSimulation();
-                        secondMapPane.terminateSimulation();
+                        mapHandlerHBox.terminateSimulation();
                         Platform.exit();
                         System.exit(0);
                     }

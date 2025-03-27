@@ -1,5 +1,8 @@
-package agh.ics.oop.map_elements;
-import agh.ics.oop.maps.AbstractWorldMap;
+package agh.ics.oop.map.element;
+
+import agh.ics.oop.map.WorldMap;
+import agh.ics.oop.map.IPositionChangeObserver;
+import javafx.scene.paint.Color;
 
 import java.util.*;
 
@@ -7,7 +10,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
 
     private MapDirection direction ;
     private Vector2d position;
-    private final AbstractWorldMap map;
+    private final int worldSize;
     private final ArrayList<IPositionChangeObserver> observerList;
     private int energy;
     private final ArrayList<Integer> genotype;
@@ -16,8 +19,8 @@ public class Animal implements IMapElement, Comparable<Animal> {
     private int childrenCounter;
 
 
-    public Animal(AbstractWorldMap map, Vector2d initialPosition, int startEnergy){
-        this.map = map;
+    public Animal(int worldSize, Vector2d initialPosition, int startEnergy){
+        this.worldSize = worldSize;
         this.position = initialPosition;
         this.direction = MapDirection.NORTH.generateMapDirection();
         observerList = new ArrayList<>();
@@ -27,32 +30,19 @@ public class Animal implements IMapElement, Comparable<Animal> {
         this.startEnergy = startEnergy;
         childrenCounter = 0;
     }
-    public Animal(AbstractWorldMap map, Vector2d initialPosition, int startEnergy,Animal clonedAnimal,int dateOfBirth){
-        this.map = map;
-        this.position = initialPosition;
-        this.direction = MapDirection.NORTH.generateMapDirection();
-        observerList = new ArrayList<>();
-        energy =startEnergy;
-        genotype = clonedAnimal.getGenotype();
-        this.dateOfBirth =dateOfBirth;
-        this.startEnergy = startEnergy;
-        childrenCounter = 0;
 
-    }
-    public Animal(AbstractWorldMap map, Vector2d initialPosition,Animal strongerParent,Animal weakerParent,int dateOfBirth,int startEnergy){
-        this.map = map;
+    public Animal(int worldSize, Vector2d initialPosition, Animal strongerParent, Animal weakerParent, int dateOfBirth, int startEnergy){
+        this.worldSize = worldSize;
         this.position = initialPosition;
         this.direction = MapDirection.NORTH.generateMapDirection();
         observerList = new ArrayList<>();
-        energy = getChildsEnergy(strongerParent,weakerParent);
-        strongerParent.changeEnergy(-(int)(strongerParent.getEnergy()/4));
-        weakerParent.changeEnergy(-(int)(weakerParent.getEnergy()/4));
-        genotype = getChildsGenotype(strongerParent,weakerParent);
+        energy = getChildrenEnergy(strongerParent,weakerParent);
+        strongerParent.addEnergy(-(int)(strongerParent.getEnergy()/4));
+        weakerParent.addEnergy(-(int)(weakerParent.getEnergy()/4));
+        genotype = getChildrenGenotype(strongerParent,weakerParent);
         this.dateOfBirth = dateOfBirth;
         this.startEnergy = startEnergy;
         childrenCounter = 0;
-
-
     }
 
 
@@ -71,7 +61,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
     }
 
     public MapDirection getDirection() { return direction; }
-    public Vector2d getPosition() {
+    public Vector2d position() {
         return position;
     }
 
@@ -79,8 +69,8 @@ public class Animal implements IMapElement, Comparable<Animal> {
         return energy;
     }
 
-    public void changeEnergy(int energy) {
-        this.energy +=energy;
+    public void addEnergy(int energy) {
+        this.energy += energy;
     }
 
     private ArrayList<Integer> generateGenotype(){
@@ -100,42 +90,47 @@ public class Animal implements IMapElement, Comparable<Animal> {
 
 
     @Override
-    public String getImgPath() {
-        if (energy > startEnergy*0.8) return "src/main/resources/yellow.png";
-        if (energy > startEnergy*0.6) return "src/main/resources/light_orange.png";
-        if (energy > startEnergy*0.4) return "src/main/resources/orange.png";
-        if (energy > startEnergy*0.2) return "src/main/resources/red.png";
-        return "src/main/resources/brown.png";
+    public Color getColor() {
+        if (energy > startEnergy*0.8) return Color.YELLOW;
+        if (energy > startEnergy*0.6) return Color.ORANGE;
+        if (energy > startEnergy*0.4) return Color.DARKORANGE;
+        if (energy > startEnergy*0.2) return Color.RED;
+        return Color.DARKRED;
 
 
     }
 
+    private boolean canMoveTo(Vector2d position) {
+        return position.x() < worldSize && position.x() >= 0
+                && position.y() < worldSize && position.y() >= 0;
+    }
+
 
     public void move(int rotation){
-        int x = this.getPosition().x;
-        int y = this.getPosition().y;
+        int x = position.x();
+        int y = position.y();
 
         switch (rotation) {
             case 0 -> {
-                if (map.canMoveTo(position.add(direction.toUnitVector())) )
+                if (canMoveTo(position.add(direction.toUnitVector())) )
                 {
                     position = position.add(direction.toUnitVector());
-                    maintainOnMap();
+                    positionChanged(new Vector2d(x,y));
+
                 }
 
 
             }
             case 4 -> {
-                if (map.canMoveTo(position.subtract(direction.toUnitVector()))) {
+                if (canMoveTo(position.subtract(direction.toUnitVector()))) {
                     position = position.subtract(direction.toUnitVector());
-                    maintainOnMap();
+                    positionChanged(new Vector2d(x,y));
                 }
             }
 
             default ->direction = direction.rotate(rotation);
         }
 
-        positionChanged(new Vector2d(x,y));
     }
 
     public void addObserver(IPositionChangeObserver observer){
@@ -158,10 +153,10 @@ public class Animal implements IMapElement, Comparable<Animal> {
         return other.energy - this.energy;
     }
 
-    private ArrayList<Integer> getChildsGenotype(Animal strongerParent,Animal weakerParent){
+    private ArrayList<Integer> getChildrenGenotype(Animal strongerParent, Animal weakerParent){
 
 
-        ArrayList<Integer> childsGenotype = new ArrayList<>();
+        ArrayList<Integer> childrenGenotype = new ArrayList<>();
 
         int energySum = weakerParent.getEnergy() + strongerParent.getEnergy();
         int gensTakenFromStronger = (32*strongerParent.getEnergy()/energySum);
@@ -171,10 +166,10 @@ public class Animal implements IMapElement, Comparable<Animal> {
         if(takeLeftSideFromStronger){
             for(int i=0;i<32;i++){
                 if(i<gensTakenFromStronger){
-                    childsGenotype.add(strongerParent.genotype.get(i));
+                    childrenGenotype.add(strongerParent.genotype.get(i));
                 }
                 else{
-                    childsGenotype.add(weakerParent.genotype.get(i));
+                    childrenGenotype.add(weakerParent.genotype.get(i));
                 }
 
             }
@@ -182,30 +177,21 @@ public class Animal implements IMapElement, Comparable<Animal> {
         else{
             for(int i=0;i<32;i++){
                 if(i<32-gensTakenFromStronger){
-                    childsGenotype.add(weakerParent.genotype.get(i));
+                    childrenGenotype.add(weakerParent.genotype.get(i));
                 }
                 else{
-                    childsGenotype.add(strongerParent.genotype.get(i));
+                    childrenGenotype.add(strongerParent.genotype.get(i));
                 }
 
             }
         }
-        Collections.sort(childsGenotype);
-        return childsGenotype;
+        Collections.sort(childrenGenotype);
+        return childrenGenotype;
     }
 
-    private int getChildsEnergy(Animal mother,Animal father){
+    private int getChildrenEnergy(Animal mother, Animal father){
         return ((mother.getEnergy() + father.getEnergy())/4);
     }
-
-    private void maintainOnMap(){
-
-        if(this.position.x == -1) this.position = new Vector2d(map.getWidth(),this.position.y);
-        if(this.position.x == map.getWidth()+1) this.position = new Vector2d(0,this.position.y);
-        if(this.position.y == -1) this.position = new Vector2d(this.position.x,map.getHeight());
-        if(this.position.y == map.getHeight()+1) this.position = new Vector2d(this.position.x,0);
-    }
-
 
     public ArrayList<Integer> getGenotype() {
         return genotype;

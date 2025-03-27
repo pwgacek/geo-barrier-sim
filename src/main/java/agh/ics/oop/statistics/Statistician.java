@@ -1,6 +1,6 @@
 package agh.ics.oop.statistics;
 
-import agh.ics.oop.gui.visualization.MapHandlerGridPane;
+import agh.ics.oop.gui.visualization.MapHandlerHBox;
 import javafx.application.Platform;
 
 import java.io.File;
@@ -10,15 +10,13 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 public class Statistician {
-    private final int mapID;
     private final ArrayList<Snapshot> statisticsHistory;
-    private final MapHandlerGridPane mapHandlerGridPane;
+    private final MapHandlerHBox mapHandlerHBox;
 
 
-    public Statistician(int mapID, MapHandlerGridPane mapHandlerGridPane) {
-        this.mapID = mapID;
+    public Statistician(MapHandlerHBox mapHandlerHBox) {
         statisticsHistory = new ArrayList<>();
-        this.mapHandlerGridPane = mapHandlerGridPane;
+        this.mapHandlerHBox = mapHandlerHBox;
     }
 
     public void addSnapshot(Snapshot snapshot){
@@ -30,7 +28,7 @@ public class Statistician {
 
     public void writeStatisticsHistoryToFile(){
 
-        String path = "src/main/statistics/map" + mapID + "statistics.csv";
+        String path = "src/main/statistics/statistics.csv";
         File file = new File(path);
 
         PrintWriter writer = null;
@@ -105,12 +103,12 @@ public class Statistician {
 
     private void updateCharts(Snapshot snapshot){
 
-        Platform.runLater(() -> {this.mapHandlerGridPane.updateCharts(snapshot);});
+        Platform.runLater(() -> {this.mapHandlerHBox.updateCharts(snapshot);});
 
     }
 
     public void updateDominantGenotypeLabel(ArrayList<Integer> dominantGenotype){
-        Platform.runLater(() -> {this.mapHandlerGridPane.updateDominantGenotypeLabel(dominantGenotype);});
+        Platform.runLater(() -> {this.mapHandlerHBox.updateDominantGenotypeLabel(dominantGenotype);});
     }
 
 

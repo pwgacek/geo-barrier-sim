@@ -1,6 +1,6 @@
 package agh.ics.oop.statistics;
 
-import agh.ics.oop.map_elements.Animal;
+import agh.ics.oop.map.element.Animal;
 
 import java.util.*;
 
@@ -34,7 +34,7 @@ public class Statistics {
         return dominantGenotype;
     }
 
-    public void setDominantGenotype(ArrayList<Animal> animals) {
+    public void setDominantGenotype(List<Animal> animals) {
         Map<ArrayList<Integer>, Integer> genotypeCounter = new HashMap<>();
         for(Animal animal : animals){
 
@@ -68,7 +68,7 @@ public class Statistics {
         return averageAnimalEnergy;
     }
 
-    public void setAverageAnimalEnergy(ArrayList<Animal> animals) {
+    public void setAverageAnimalEnergy(List<Animal> animals) {
         if(animals.size()>0){
             int energySum = 0;
             for(Animal animal :animals){
@@ -98,7 +98,7 @@ public class Statistics {
         return averageChildrenQuantity;
     }
 
-    public void setAverageChildrenQuantity(ArrayList<Animal> animals) {
+    public void setAverageChildrenQuantity(List<Animal> animals) {
         if(animals.size() > 0){
             int sumOfChildren = 0;
             for(Animal animal:animals){

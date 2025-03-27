@@ -1,11 +1,10 @@
 package agh.ics.oop.simulation;
 
-import agh.ics.oop.conditions.SimulationConditions;
-import agh.ics.oop.gui.visualization.MapHandlerGridPane;
+import agh.ics.oop.gui.visualization.MapHandlerHBox;
 import agh.ics.oop.gui.visualization.MapVisualizer;
-import agh.ics.oop.map_elements.Animal;
-import agh.ics.oop.map_elements.Vector2d;
-import agh.ics.oop.maps.AbstractWorldMap;
+import agh.ics.oop.map.element.Animal;
+import agh.ics.oop.map.element.Vector2d;
+import agh.ics.oop.map.WorldMap;
 import agh.ics.oop.statistics.Snapshot;
 import agh.ics.oop.statistics.Statistician;
 import agh.ics.oop.statistics.Statistics;
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class SimulationEngine  extends Thread{
 
-    private final AbstractWorldMap map;
+    private final WorldMap worldMap;
     private int dayCounter;
 
     private final MapVisualizer observer;
@@ -27,42 +26,36 @@ public class SimulationEngine  extends Thread{
     private int deathCounter;
     private final Statistician statistician;
     private boolean isTerminated;
-    private final MapHandlerGridPane mapHandlerGridPane;
-    private int evolutionCounter;
+    private final MapHandlerHBox mapHandlerHBox;
 
 
 
 
-    public SimulationEngine(MapHandlerGridPane mapHandlerGridPane, AbstractWorldMap map, MapVisualizer mapVisualizer) {
+    public SimulationEngine(MapHandlerHBox mapHandlerHBox, WorldMap worldMap, MapVisualizer mapVisualizer) {
 
         isTerminated=false;
-        this.map = map;
-        this.mapHandlerGridPane = mapHandlerGridPane;
+        this.worldMap = worldMap;
+        this.mapHandlerHBox = mapHandlerHBox;
         this.observer = mapVisualizer;
-        this.conditions = mapHandlerGridPane.getConditions();
+        this.conditions = mapHandlerHBox.getConditions();
         this.statistics = new Statistics();
         this.deathCounter = 0;
-        this.evolutionCounter = 0;
         this.dayCounter = 0;
 
-        ArrayList<Vector2d> positionsWithoutAnimal = new ArrayList<>();
-        for(int x=0; x<=map.getWidth();x++){
-            for(int y=0;y<= map.getHeight();y++){
-                positionsWithoutAnimal.add(new Vector2d(x,y));
-            }
-        }
         for(int i=0;i<conditions.getAnimalQuantity();i++){
-            map.place(new Animal(this.map,positionsWithoutAnimal.remove(new Random().nextInt((positionsWithoutAnimal.size()))),conditions.getStartEnergy()));
+            Random rand = new Random();
+            Vector2d position = new Vector2d(rand.nextInt(worldMap.getSize()), rand.nextInt(worldMap.getSize()));
+            worldMap.place(new Animal(worldMap.getSize(), position,conditions.getStartEnergy()));
         }
 
-        statistician = new Statistician(map.getMyID(),mapHandlerGridPane);
+        statistician = new Statistician(mapHandlerHBox);
 
     }
 
 
 
     @Override
-    public void  run() {
+    public void run() {
 
         updateStatistics();
         statistician.addSnapshot(new Snapshot(dayCounter,statistics));
@@ -72,7 +65,7 @@ public class SimulationEngine  extends Thread{
         Platform.runLater(observer::positionChanged);
         waitForRunLater();
 
-        while(!map.getAnimals().isEmpty()){
+        while(!worldMap.getAnimalsList().isEmpty()){
             dayCounter++;
             if(!conditions.isRunning()){
                 statistician.writeStatisticsHistoryToFile();
@@ -89,6 +82,7 @@ public class SimulationEngine  extends Thread{
             breedAnimals();// rozmnażanie zwierząt
             addNewGrass();// dodanie nowych roślin
 
+            long start = System.currentTimeMillis();
 
             Platform.runLater(observer::positionChanged);
             try {
@@ -99,7 +93,7 @@ public class SimulationEngine  extends Thread{
             }
             waitForRunLater();
 
-
+            System.out.println(System.currentTimeMillis()-start);
             updateStatistics();
             statistician.addSnapshot(new Snapshot(dayCounter,statistics));
             statistician.updateDominantGenotypeLabel(statistics.getDominantGenotype());
@@ -111,7 +105,7 @@ public class SimulationEngine  extends Thread{
 
             statistician.writeStatisticsHistoryToFile();
             conditions.setIsRunning(false);
-            Platform.runLater(this.mapHandlerGridPane::disableStopStartBtn);
+            Platform.runLater(this.mapHandlerHBox::disableStopStartBtn);
 
         }
 
@@ -119,26 +113,24 @@ public class SimulationEngine  extends Thread{
     }
 
     private void updateStatistics() {
-        statistics.setAnimalQuantity(map.getAnimals().size());
-        statistics.setGrassQuantity(map.getGrassInJungle().size() + map.getGrassInSavanna().size());
-        statistics.setDominantGenotype(map.getAnimals());
-        statistics.setAverageAnimalEnergy(map.getAnimals());
-        statistics.setAverageChildrenQuantity(map.getAnimals());
+        statistics.setAnimalQuantity(worldMap.getAnimalsList().size());
+        statistics.setGrassQuantity(worldMap.getGrass().size());
+        statistics.setDominantGenotype(worldMap.getAnimalsList());
+        statistics.setAverageAnimalEnergy(worldMap.getAnimalsList());
+        statistics.setAverageChildrenQuantity(worldMap.getAnimalsList());
     }
 
     private void addNewGrass() {
-        map.addGrassToJungle();
-        map.addGrassToSavanna();
+        worldMap.growGrass();
     }
 
     private void breedAnimals() {
-
-        for(Vector2d position : map.getAnimalsHashMap().keySet()){
-            if(map.getAnimalsHashMap().get(position).size() > 1){
-
+        Map<Vector2d, ArrayList<Animal>> animals = worldMap.getAnimals();
+        for(Vector2d position : animals.keySet()){
+            if(animals.get(position).size() > 1){
                 Animal strongerParent,weakerParent;
-                int maxEnergy = map.getAnimalsHashMap().get(position).get(0).getEnergy();
-                ArrayList<Animal> candidates = (ArrayList<Animal>) map.getAnimalsHashMap().get(position).stream().filter(a -> a.getEnergy() == maxEnergy).collect(Collectors.toList());
+                int maxEnergy = animals.get(position).get(0).getEnergy();
+                ArrayList<Animal> candidates = (ArrayList<Animal>) animals.get(position).stream().filter(a -> a.getEnergy() == maxEnergy).collect(Collectors.toList());
                 if (candidates.size() >= 2){
                     ArrayList<Animal> parents = drawParents(candidates,2);
                     strongerParent = parents.get(0);
@@ -146,9 +138,9 @@ public class SimulationEngine  extends Thread{
 
                 }
                 else{
-                    int secondMaxEnergy = map.getAnimalsHashMap().get(position).get(1).getEnergy();
+                    int secondMaxEnergy = animals.get(position).get(1).getEnergy();
                     strongerParent = candidates.get(0);
-                    candidates = (ArrayList<Animal>) map.getAnimalsHashMap().get(position).stream().filter(a -> a.getEnergy() == secondMaxEnergy).collect(Collectors.toList());
+                    candidates = (ArrayList<Animal>) animals.get(position).stream().filter(a -> a.getEnergy() == secondMaxEnergy).collect(Collectors.toList());
                     weakerParent = drawParents(candidates,1).get(0);
 
                 }
@@ -156,11 +148,9 @@ public class SimulationEngine  extends Thread{
                 if(weakerParent.getEnergy() >= (conditions.getStartEnergy()/2) && strongerParent.getEnergy()>0){
                     weakerParent.incrementChildrenCounter();
                     strongerParent.incrementChildrenCounter();
-                    Animal child = new Animal(map,position,strongerParent,weakerParent,dayCounter,conditions.getStartEnergy());
-                    map.getAnimals().add(child);
-                    map.getAnimalsHashMap().get(position).add(child);
-                    Collections.sort(map.getAnimalsHashMap().get(position));
-                    child.addObserver(map);
+                    Animal child = new Animal(worldMap.getSize(), position,strongerParent,weakerParent,dayCounter,conditions.getStartEnergy());
+                    worldMap.place(child);
+
                 }
 
             }
@@ -168,36 +158,35 @@ public class SimulationEngine  extends Thread{
     }
 
     private void feedAnimals() {
+        Map<Vector2d, ArrayList<Animal>> animals = worldMap.getAnimals();
+        for(Vector2d position : animals.keySet()){
+            if(worldMap.getGrass().containsKey(position)){
 
-        for(Vector2d position : map.getAnimalsHashMap().keySet()){
-            if(map.getGrassInJungle().containsKey(position) || map.getGrassInSavanna().containsKey(position)){
-
-                int maxEnergy = map.getAnimalsHashMap().get(position).get(0).getEnergy();
-                List<Animal> banqueters = map.getAnimalsHashMap().get(position).stream().filter(a -> a.getEnergy() == maxEnergy).collect(Collectors.toList());
+                int maxEnergy = animals.get(position).get(0).getEnergy();
+                List<Animal> banqueters = animals.get(position).stream().filter(a -> a.getEnergy() == maxEnergy).collect(Collectors.toList());
 
                 for(Animal animal:banqueters){
-                    animal.changeEnergy(conditions.getPlantEnergy()/banqueters.size());
+                    animal.addEnergy(conditions.getPlantEnergy()/banqueters.size());
                 }
-                if(map.getGrassInSavanna().containsKey(position))map.removeGrassFromSavanna(position);
-                if(map.getGrassInJungle().containsKey(position))map.removeGrassFromJungle(position);
+                 worldMap.removeGrassFromSavanna(position);
 
             }
         }
     }
 
     private void moveAnimals() {
-        for(Animal animal : map.getAnimals()){
+        for(Animal animal : worldMap.getAnimalsList()){
             animal.move(animal.getRandomGen());
 
         }
-        for(Animal animal :map.getAnimals()){
-            animal.changeEnergy(-conditions.getMoveEnergy());
+        for(Animal animal : worldMap.getAnimalsList()){
+            animal.addEnergy(-conditions.getMoveEnergy());
         }
     }
 
     private void removeDeadAnimals() {
         ArrayList<Animal> animalsToRemove = new ArrayList<>();
-        for(Animal animal : map.getAnimals()){
+        for(Animal animal : worldMap.getAnimalsList()){
             if(animal.getEnergy()-conditions.getMoveEnergy() < 0){
                 animalsToRemove.add(animal);
                 statistics.setAverageLifeSpan(deathCounter,dayCounter,animal);
@@ -205,9 +194,8 @@ public class SimulationEngine  extends Thread{
             }
         }
         for(Animal deadAnimal : animalsToRemove){
-            deadAnimal.removeObserver(this.map);
-            map.removeAnimal(deadAnimal);
-            if(conditions.isEvolutionMagical()&& evolutionCounter < 3 && map.getAnimals().size() == 5) cloneAnimals();
+            deadAnimal.removeObserver(this.worldMap);
+            worldMap.removeAnimal(deadAnimal);
         }
     }
 
@@ -222,51 +210,10 @@ public class SimulationEngine  extends Thread{
         return result;
     }
 
-    private void cloneAnimals(){
-        ArrayList<Vector2d> positionsWithoutAnimal = new ArrayList<>();
-        for(int x=0; x<=map.getWidth();x++){
-            for(int y=0;y<= map.getHeight();y++){
-                Vector2d position = new Vector2d(x,y);
-                if(!map.getAnimalsHashMap().containsKey(position)){
-                    positionsWithoutAnimal.add(position);
-                }
-
-            }
-        }
-        ArrayList<Animal> clones = new ArrayList<>();
-        for(Animal clonedAnimal:map.getAnimals()){
-            clones.add( new Animal(this.map,positionsWithoutAnimal.remove(new Random().nextInt((positionsWithoutAnimal.size()))),conditions.getStartEnergy(),clonedAnimal,dayCounter));
-        }
-        for(Animal clone:clones){
-            map.place(clone);
-        }
-
-        showMagicalEvolutionInfo(++this.evolutionCounter);
-    }
-
-
-
-
-    public static void waitForRunLater()  {
-        Semaphore semaphore = new Semaphore(0);
-        Platform.runLater(semaphore::release);
-        try {
-            semaphore.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-    }
-
     public void setTerminated(boolean terminated) {
         isTerminated = terminated;
         conditions.setIsRunning(true);
         resumeMe();
-    }
-
-    private void showMagicalEvolutionInfo(int evolutionCounter){
-
-        Platform.runLater(() -> this.mapHandlerGridPane.showMagicalEvolutionInfo(evolutionCounter,map.getMyID()));
     }
 
     synchronized protected void suspendMe(AtomicBoolean isRunning){
@@ -282,5 +229,16 @@ public class SimulationEngine  extends Thread{
 
     synchronized public void resumeMe(){
         notifyAll();
+    }
+
+    public static void waitForRunLater()  {
+        Semaphore semaphore = new Semaphore(0);
+        Platform.runLater(semaphore::release);
+        try {
+            semaphore.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 }

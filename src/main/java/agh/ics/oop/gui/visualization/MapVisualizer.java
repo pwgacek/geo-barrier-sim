@@ -1,72 +1,45 @@
 package agh.ics.oop.gui.visualization;
 
-import agh.ics.oop.map_elements.IMapElement;
-import agh.ics.oop.map_elements.Vector2d;
-import agh.ics.oop.maps.AbstractWorldMap;
-import javafx.geometry.HPos;
-import javafx.geometry.VPos;
-import javafx.scene.control.Label;
+import agh.ics.oop.map.element.IMapElement;
+import agh.ics.oop.map.element.Vector2d;
+import agh.ics.oop.map.WorldMap;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
-import javafx.scene.text.Font;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class MapVisualizer {
-
-    private final AbstractWorldMap map;
+    private long time = System.currentTimeMillis();
+    private final WorldMap worldMap;
     private final GuiElementBox[][] guiElementBoxArray;
 
 
 
 
 
-    MapVisualizer(GridPane gridPane, AbstractWorldMap map, double cellSize, AtomicBoolean isRunning){
+    MapVisualizer(GridPane gridPane, WorldMap worldMap, double cellSize, AtomicBoolean isRunning){
 
-        for(int x=0;x<=map.getWidth()+1;x++){
+        for(int x = 0; x < worldMap.getSize(); x++){
             gridPane.getColumnConstraints().add(new ColumnConstraints(cellSize));
         }
-        for(int y=0;y<=map.getHeight()+1;y++){
+        for(int y = 0; y < worldMap.getSize(); y++){
             gridPane.getRowConstraints().add(new RowConstraints(cellSize));
         }
-        guiElementBoxArray = new GuiElementBox[(map.getWidth()+1)][(map.getHeight()+1)];
-        Label label = new Label("y/x");
-        label.setFont(new Font(0.5*cellSize));
-        gridPane.add(label,0,0);
-        GridPane.setHalignment(label, HPos.CENTER);
 
-        for(int x=0;x<=map.getWidth();x++){
-            label = new Label(String.valueOf(x));
-            label.setFont(new Font(0.5*cellSize));
-            gridPane.add(label,x+1,0);
-            GridPane.setHalignment(label, HPos.CENTER);
+        long startTime = System.currentTimeMillis();
 
-        }
-        for(int y=0;y<=map.getHeight();y++){
-            label = new Label(String.valueOf(map.getHeight()-y));
-            label.setFont(new Font(0.5*cellSize));
-            gridPane.add(label,0,y+1);
-            GridPane.setHalignment(label, HPos.CENTER);
-
-
-        }
-
-        for(int y=0;y<=map.getHeight();y++){
-            for(int x=0;x<=map.getWidth();x++){
-                Vector2d cords = new Vector2d(x,y);
-                boolean isJungle = map.getJungleBottomLeftCords().precedes(cords) && map.getJungleUpperRightCords().follows(cords);
-                guiElementBoxArray[x][y] = new GuiElementBox(cellSize,isJungle,isRunning);
-                gridPane.add(guiElementBoxArray[x][y],x+1,map.getHeight()-y +1);
-                GridPane.setHalignment(guiElementBoxArray[x][y], HPos.CENTER);
-                GridPane.setValignment(guiElementBoxArray[x][y], VPos.CENTER);
+        guiElementBoxArray = new GuiElementBox[worldMap.getSize()][worldMap.getSize()];
+        for(int y = 0; y < worldMap.getSize(); y++){
+            for(int x = 0; x < worldMap.getSize(); x++){
+                guiElementBoxArray[x][y] = new GuiElementBox(cellSize,isRunning);
+                gridPane.add(guiElementBoxArray[x][y],x, worldMap.getSize()- y - 1);
             }
         }
+        System.out.println("time: " + (System.currentTimeMillis() - startTime));
 
-
-        gridPane.setGridLinesVisible(true);
-        this.map = map;
+        this.worldMap = worldMap;
 
 
     }
@@ -74,25 +47,18 @@ public class MapVisualizer {
 
 
     public void positionChanged() {
+        for(int y = 0; y < worldMap.getSize(); y++){
+            for(int x = 0; x < worldMap.getSize(); x++){
+                IMapElement element = (IMapElement) worldMap.objectAt(new Vector2d(x,y));
 
-        for(int y = 0; y<=map.getHeight();y++){
-            for(int x = 0;x <=map.getWidth();x++){
-                IMapElement element = (IMapElement) map.objectAt(new Vector2d(x,y));
-
-
-                if(element !=null){
-
-                    guiElementBoxArray[x][y].setImageView(element);
-
+                if(element != null){
+                    guiElementBoxArray[x][y].putIfChanged(element);
                 }
                 else{
-                    guiElementBoxArray[x][y].removeImageView();
-
+                    guiElementBoxArray[x][y].clean();
                 }
 
             }
         }
-
-
     }
 }
