@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Simulation {
     private int dayCounter = 0;
@@ -16,13 +17,25 @@ public class Simulation {
     private final SimulationSettings settings;
 
     public Simulation(SimulationSettings settings) {
-        this.worldMap = new WorldMap(settings.getMapSize(), settings.getPlantGrowthChancePer1000());
+        this.worldMap = new WorldMap(settings.getMapSize(), settings.getPlantGrowthChancePer10000());
         this.settings = settings;
 
+        Random rand = new Random();
+
+
         for(int i=0;i<settings.getInitialAnimalCount();i++){
-            Random rand = new Random();
             Vector2d position = new Vector2d(rand.nextInt(worldMap.getWidth()), rand.nextInt(worldMap.getHeight()));
             worldMap.place(new Animal(worldMap.getWidth(), worldMap.getHeight(), position,settings.getStartEnergy()));
+        }
+        int cellsCount = worldMap.getWidth() * worldMap.getHeight();
+        int grassCount = (int) (cellsCount * (settings.getInitialGrassPercentage() / 100f));
+
+        List<Vector2d> grassPositions = IntStream.range(0, cellsCount)
+            .mapToObj(i -> new Vector2d(i / worldMap.getHeight(), i % worldMap.getHeight()))
+            .collect(Collectors.toList());
+
+        for (int i = 0; i < grassCount; i++) {
+            worldMap.addGrass(grassPositions.remove(rand.nextInt(grassPositions.size())));
         }
     }
 
@@ -62,9 +75,9 @@ public class Simulation {
                 }
                 else{
                     int secondMaxEnergy = animals.get(position).get(1).getEnergy();
-                    strongerParent = candidates.get(0);
+                    strongerParent = candidates.getFirst();
                     candidates = (ArrayList<Animal>) animals.get(position).stream().filter(a -> a.getEnergy() == secondMaxEnergy).collect(Collectors.toList());
-                    weakerParent = drawParents(candidates,1).get(0);
+                    weakerParent = drawParents(candidates,1).getFirst();
 
                 }
 
@@ -85,13 +98,13 @@ public class Simulation {
         for(Vector2d position : animals.keySet()){
             if(worldMap.getGrass().containsKey(position)){
 
-                int maxEnergy = animals.get(position).get(0).getEnergy();
-                List<Animal> banqueters = animals.get(position).stream().filter(a -> a.getEnergy() == maxEnergy).collect(Collectors.toList());
+                int maxEnergy = animals.get(position).getFirst().getEnergy();
+                List<Animal> banqueters = animals.get(position).stream().filter(a -> a.getEnergy() == maxEnergy).toList();
 
                 for(Animal animal:banqueters){
                     animal.gainEnergy(settings.getEnergyFromPlant()/banqueters.size());
                 }
-                worldMap.removeGrassFromSavanna(position);
+                worldMap.removeGrass(position);
 
             }
         }

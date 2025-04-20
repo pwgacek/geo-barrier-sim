@@ -7,14 +7,15 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
 import pl.edu.agh.miss.geobarriersim.map.WorldMap;
 import pl.edu.agh.miss.geobarriersim.map.element.Animal;
 import pl.edu.agh.miss.geobarriersim.map.element.IMapElement;
@@ -28,7 +29,7 @@ public class SimulationScreen implements Screen {
     private static final int SCREEN_HEIGHT = 1080;
     private static final int SCREEN_WIDTH = 1920;
 
-    private final float timeScale = 20f;  // 20 days per second (1 day per 50 ms)
+    private float timeScale = 50f;  // 20 days per second (1 day per 50 ms)
     private final float cellSize;
 
     private boolean isPaused = false;
@@ -39,8 +40,8 @@ public class SimulationScreen implements Screen {
     private final Simulation simulation;
     private Skin skin;
     private Stage stage;
-    private TextButton startStopSimulationButton;
-    private Viewport viewport;
+    private TextButton togglePauseButton;
+    private Slider simulationSpeedSlider;
 
     public SimulationScreen(SimulationSettings settings) {
         this.simulation = new Simulation(settings);
@@ -52,38 +53,58 @@ public class SimulationScreen implements Screen {
         shapeRenderer = new ShapeRenderer();
         skin  = new Skin(Gdx.files.internal("uiskin.json"));
         camera = new OrthographicCamera();
-        viewport = new ScreenViewport(camera);
-        stage = new Stage(viewport);
+        stage = new Stage(new ScreenViewport(camera));
 
         Gdx.input.setInputProcessor(stage);
 
-        startStopSimulationButton = new TextButton("Stop Simulation", skin);
-        startStopSimulationButton.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 50,  400);
-        startStopSimulationButton.setSize(200, 60);
+        togglePauseButton = new TextButton("Stop Simulation", skin);
+        togglePauseButton.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 50,  400);
+        togglePauseButton.setSize(200, 60);
 
-        startStopSimulationButton.addListener(new ClickListener() {
+        togglePauseButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                if (isPaused) {
-                    resume();
-                    startStopSimulationButton.setText("Stop Simulation");
-                } else {
-                    pause();
-                    startStopSimulationButton.setText("Start Simulation");
-                }
+                togglePause();
             }
         });
 
-        stage.addActor(startStopSimulationButton);
+        stage.addActor(togglePauseButton);
+
+        simulationSpeedSlider = new Slider(1, 100, 1, false, skin);
+        simulationSpeedSlider.setValue(timeScale);
+        simulationSpeedSlider.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 150,  300);
+        simulationSpeedSlider.setSize(400, 60);
+
+        simulationSpeedSlider.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                timeScale = simulationSpeedSlider.getValue();
+            }
+        });
+
+        stage.addActor(simulationSpeedSlider);
+    }
+
+    private void togglePause() {
+        if (isPaused) {
+            isPaused = false;
+            togglePauseButton.setText("Stop Simulation");
+        } else {
+            isPaused = true;
+            togglePauseButton.setText("Start Simulation");
+        }
     }
 
 
 
     public void render(float delta) {
-        // Render the simulation
-        Gdx.gl.glClearColor(0.5f, 0.5f, 0.5f, 0f);
+        Gdx.gl.glClearColor(0.8f, 0.8f, 0.8f, 0f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         shapeRenderer.setProjectionMatrix(camera.combined);
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+            togglePause();
+        }
 
         if (!isPaused) {
             simulationTime += delta * timeScale;
@@ -98,14 +119,6 @@ public class SimulationScreen implements Screen {
         renderWorldMap(shapeRenderer);
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();
-
-
-        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-            float screenX = Gdx.input.getX();
-            float screenY = Gdx.input.getY();
-            Vector3 unprojected = camera.unproject(new Vector3(screenX, screenY, 0f));
-            System.out.println(unprojected);
-        }
     }
 
     private void renderWorldMap(ShapeRenderer shapeRenderer) {
@@ -159,12 +172,11 @@ public class SimulationScreen implements Screen {
 
     @Override
     public void pause() {
-        isPaused = true;
+
     }
 
     @Override
     public void resume() {
-        isPaused = false;
     }
 
     @Override

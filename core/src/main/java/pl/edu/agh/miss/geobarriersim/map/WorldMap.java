@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class WorldMap implements IPositionChangeObserver {
     private final int width;
     private final int height;
-    private final int grassGrowChancePerThousand;
+    private final int grassGrowChancePer10000;
     private final Map<Vector2d, ArrayList<Animal>> animals;
 
 
@@ -29,18 +29,18 @@ public class WorldMap implements IPositionChangeObserver {
     private final Map<Vector2d, Grass> noGrass;
 
 
-    public WorldMap(int size, int grassGrowChancePerThousand) {
+    public WorldMap(int size, int grassGrowChancePer100000) {
         this.animals = new HashMap<>();
 
         this.width = size * 4 / 3;
         this.height = size;
-        this.grassGrowChancePerThousand = grassGrowChancePerThousand;
+        this.grassGrowChancePer10000 = grassGrowChancePer100000;
 
         this.grass = new HashMap<>();
         this.noGrass = new HashMap<>();
 
-        for(int y = 0; y<this.height; y++){
-            for(int x = 0; x<this.width; x++){
+        for(int y = 0; y < this.height; y++){
+            for(int x = 0; x < this.width; x++){
                 Vector2d vector = new Vector2d(x,y);
                 Grass grass = new Grass(vector);
                 noGrass.put(vector,grass);
@@ -59,7 +59,7 @@ public class WorldMap implements IPositionChangeObserver {
         while (noGrassIterator.hasNext()) {
             Map.Entry<Vector2d, Grass> noGrassEntry = noGrassIterator.next();
             if(animals.get(noGrassEntry.getKey()).isEmpty()){
-                if (new Random().nextInt(1000) < grassGrowChancePerThousand){
+                if (new Random().nextInt(10000) < grassGrowChancePer10000){
                     noGrassIterator.remove();
                     grass.put(noGrassEntry.getKey(),noGrassEntry.getValue());
                 }
@@ -69,7 +69,13 @@ public class WorldMap implements IPositionChangeObserver {
 
     }
 
-    public void removeGrassFromSavanna(Vector2d position){
+    public void addGrass(Vector2d position) {
+        Grass g = this.noGrass.get(position);
+        grass.put(position,g);
+        this.noGrass.remove(position);
+    }
+
+    public void removeGrass(Vector2d position){
         Grass grass = this.grass.get(position);
         noGrass.put(position,grass);
         this.grass.remove(position);

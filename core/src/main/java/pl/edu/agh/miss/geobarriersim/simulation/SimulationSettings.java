@@ -6,15 +6,17 @@ public class SimulationSettings {
     private int energyLossPerMove;
     private int energyFromPlant;
     private int initialAnimalCount;
-    private int plantGrowthChancePer1000;
+    private int initialGrassPercentage;
+    private int plantGrowthChancePer10000;
 
     public SimulationSettings() {
         this.mapSize = 100;
         this.startEnergy = 100;
         this.energyLossPerMove = 1;
-        this.energyFromPlant = 20;
-        this.initialAnimalCount = 20;
-        this.plantGrowthChancePer1000 = 1;
+        this.energyFromPlant = 50;
+        this.initialAnimalCount = 50;
+        this.initialGrassPercentage = 75;
+        this.plantGrowthChancePer10000 = 5;
     }
 
     public int getMapSize() {
@@ -57,11 +59,19 @@ public class SimulationSettings {
         this.initialAnimalCount = initialAnimalCount;
     }
 
-    public int getPlantGrowthChancePer1000() {
-        return plantGrowthChancePer1000;
+    public int getPlantGrowthChancePer10000() {
+        return plantGrowthChancePer10000;
     }
 
-    public void setPlantGrowthChancePer1000(int plantGrowthChancePer1000) {
-        this.plantGrowthChancePer1000 = plantGrowthChancePer1000;
+    public void setPlantGrowthChancePer10000(int plantGrowthChancePer10000) {
+        this.plantGrowthChancePer10000 = plantGrowthChancePer10000;
+    }
+
+    public int getInitialGrassPercentage() {
+        return initialGrassPercentage;
+    }
+
+    public void setInitialGrassPercentage(int initialGrassPercentage) {
+        this.initialGrassPercentage = initialGrassPercentage;
     }
 }
