@@ -65,8 +65,6 @@ public class WorldMap implements IPositionChangeObserver {
                 }
             }
         }
-
-
     }
 
     public void addGrass(Vector2d position) {
@@ -102,12 +100,10 @@ public class WorldMap implements IPositionChangeObserver {
     public void positionChanged(Vector2d oldPosition, Animal animal){
         animals.get(oldPosition).remove(animal);
 
-
         animals.get(animal.position()).add(animal);
         if(animals.size() > 1){
             Collections.sort(animals.get(animal.position()));
         }
-
 
     }
 
@@ -120,7 +116,7 @@ public class WorldMap implements IPositionChangeObserver {
         return animals.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
     }
 
-    public Map<Vector2d, ArrayList<Animal>> getAnimals() {
+    public Map<Vector2d, List<Animal>> getAnimals() {
         return animals.entrySet().stream().filter(it -> !it.getValue().isEmpty()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 

@@ -2,9 +2,11 @@ package pl.edu.agh.miss.geobarriersim.simulation;
 
 import pl.edu.agh.miss.geobarriersim.map.WorldMap;
 import pl.edu.agh.miss.geobarriersim.map.element.Animal;
+import pl.edu.agh.miss.geobarriersim.map.element.Pair;
 import pl.edu.agh.miss.geobarriersim.map.element.Vector2d;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -25,7 +27,7 @@ public class Simulation {
 
         for(int i=0;i<settings.getInitialAnimalCount();i++){
             Vector2d position = new Vector2d(rand.nextInt(worldMap.getWidth()), rand.nextInt(worldMap.getHeight()));
-            worldMap.place(new Animal(worldMap.getWidth(), worldMap.getHeight(), position,settings.getStartEnergy()));
+            worldMap.place(new Animal(worldMap.getWidth(), worldMap.getHeight(), position, settings.getStartEnergy(), settings.getEnergyLossPerMove()));
         }
         int cellsCount = worldMap.getWidth() * worldMap.getHeight();
         int grassCount = (int) (cellsCount * (settings.getInitialGrassPercentage() / 100f));
@@ -61,62 +63,67 @@ public class Simulation {
     }
 
     private void breedAnimals() {
-        Map<Vector2d, ArrayList<Animal>> animals = worldMap.getAnimals();
-        for(Vector2d position : animals.keySet()){
-            if(animals.get(position).size() > 1){
-                Animal strongerParent,weakerParent;
-                int maxEnergy = animals.get(position).get(0).getEnergy();
-                ArrayList<Animal> candidates = (ArrayList<Animal>) animals.get(position).stream().filter(a -> a.getEnergy() == maxEnergy).collect(Collectors.toList());
-                if (candidates.size() >= 2){
-                    ArrayList<Animal> parents = drawParents(candidates,2);
-                    strongerParent = parents.get(0);
-                    weakerParent = parents.get(1);
+        for(List<Animal> animals : worldMap.getAnimals().values()){
+            long possibleParentsCount = animals.stream()
+                .takeWhile(it -> it.getEnergy() >= settings.getStartEnergy())
+                .count();
 
-                }
-                else{
-                    int secondMaxEnergy = animals.get(position).get(1).getEnergy();
-                    strongerParent = candidates.getFirst();
-                    candidates = (ArrayList<Animal>) animals.get(position).stream().filter(a -> a.getEnergy() == secondMaxEnergy).collect(Collectors.toList());
-                    weakerParent = drawParents(candidates,1).getFirst();
+            if(possibleParentsCount > 1){
+                Pair<Animal> parents = getParents(animals);
 
-                }
-
-                if(weakerParent.getEnergy() >= (settings.getStartEnergy()/2) && strongerParent.getEnergy()>0){
-                    weakerParent.incrementChildrenCounter();
-                    strongerParent.incrementChildrenCounter();
-                    Animal child = new Animal(worldMap.getWidth(), worldMap.getHeight(), position, strongerParent, weakerParent, dayCounter, settings.getStartEnergy());
-                    worldMap.place(child);
-
-                }
-
+                Animal child = Animal.breed(parents, dayCounter);
+                worldMap.place(child);
             }
         }
     }
 
+
+
+    private Pair<Animal> getParents(List<Animal> animals) {
+
+        int maxEnergy = animals.getFirst().getEnergy();
+        List<Animal> possibleParents = animals.stream()
+            .filter(it -> it.getEnergy() == maxEnergy)
+            .collect(Collectors.toList());
+
+        if (possibleParents.size() >= 2){
+            Collections.shuffle(possibleParents);
+            return Pair.of(possibleParents.get(0), possibleParents.get(1));
+        }
+        else{
+            Animal strongerParent = possibleParents.getFirst();
+            int secondMaxEnergy = animals.get(1).getEnergy();
+            possibleParents = animals.stream()
+                .filter(it -> it.getEnergy() == secondMaxEnergy)
+                .collect(Collectors.toList());
+            Collections.shuffle(possibleParents);
+            return Pair.of(strongerParent, possibleParents.getFirst());
+        }
+
+
+    }
+
     private void feedAnimals() {
-        Map<Vector2d, ArrayList<Animal>> animals = worldMap.getAnimals();
-        for(Vector2d position : animals.keySet()){
+        for(Map.Entry<Vector2d, List<Animal>> entry : worldMap.getAnimals().entrySet()){
+            Vector2d position = entry.getKey();
+            List<Animal> animals = entry.getValue();
+
             if(worldMap.getGrass().containsKey(position)){
-
-                int maxEnergy = animals.get(position).getFirst().getEnergy();
-                List<Animal> banqueters = animals.get(position).stream().filter(a -> a.getEnergy() == maxEnergy).toList();
-
-                for(Animal animal:banqueters){
-                    animal.gainEnergy(settings.getEnergyFromPlant()/banqueters.size());
-                }
                 worldMap.removeGrass(position);
 
+                int maxEnergy = animals.getFirst().getEnergy();
+                List<Animal> grassEaters = animals.stream()
+                    .filter(it -> it.getEnergy() == maxEnergy).
+                    toList();
+
+                grassEaters.forEach(it -> it.gainEnergy(settings.getEnergyFromPlant() / grassEaters.size()));
             }
         }
     }
 
     private void moveAnimals() {
         for(Animal animal : worldMap.getAnimalsList()){
-            animal.move(animal.getRandomGen());
-
-        }
-        for(Animal animal : worldMap.getAnimalsList()){
-            animal.loseEnergy(settings.getEnergyLossPerMove());
+            animal.move();
         }
     }
 
@@ -133,15 +140,5 @@ public class Simulation {
         }
     }
 
-    private ArrayList<Animal> drawParents(ArrayList <Animal> candidates,int quantity){
-        Random rd = new Random();
-        ArrayList <Animal> result = new ArrayList<>();
-        Animal chosenOne;
-        for(int i =0;i<quantity;i++){
-            chosenOne= candidates.remove(rd.nextInt(candidates.size()));
-            result.add(chosenOne);
-        }
-        return result;
-    }
 
 }

@@ -16,11 +16,12 @@ public class Animal implements IMapElement, Comparable<Animal> {
     private int energy;
     private final ArrayList<Integer> genotype;
     private final int startEnergy;
+    private final int energyLossPerMove;
     private final int dateOfBirth;
     private int childrenCounter;
 
 
-    public Animal(int worldWidth, int worldHeight, Vector2d initialPosition, int startEnergy){
+    public Animal(int worldWidth, int worldHeight, Vector2d initialPosition, int startEnergy, int energyLossPerMove){
         this.worldWidth = worldWidth;
         this.worldHeight = worldHeight;
         this.position = initialPosition;
@@ -30,22 +31,30 @@ public class Animal implements IMapElement, Comparable<Animal> {
         genotype = generateGenotype();
         dateOfBirth =0;
         this.startEnergy = startEnergy;
+        this.energyLossPerMove = energyLossPerMove;
         childrenCounter = 0;
     }
 
-    public Animal(int worldWidth,int worldHeight, Vector2d initialPosition, Animal strongerParent, Animal weakerParent, int dateOfBirth, int startEnergy){
-        this.worldWidth = worldWidth;
-        this.worldHeight = worldHeight;
-        this.position = initialPosition;
+    private Animal(Pair<Animal> parents, int dateOfBirth, int startEnergy){
+        this.worldWidth = parents.first().worldWidth;
+        this.worldHeight = parents.first().worldHeight;
+        this.position = parents.first().position;
         this.direction = MapDirection.NORTH.generateMapDirection();
         observerList = new ArrayList<>();
-        energy = getChildrenEnergy(strongerParent,weakerParent);
-        strongerParent.loseEnergy((strongerParent.getEnergy()/4));
-        weakerParent.loseEnergy((weakerParent.getEnergy()/4));
-        genotype = getChildrenGenotype(strongerParent,weakerParent);
+        this.energy = startEnergy;
+        genotype = getChildrenGenotype(parents);
         this.dateOfBirth = dateOfBirth;
-        this.startEnergy = startEnergy;
+        this.startEnergy = parents.first().startEnergy;
+        this.energyLossPerMove = parents.first().energyLossPerMove;
         childrenCounter = 0;
+    }
+
+    public static Animal breed(Pair<Animal> parents, int dayOfBirth) {
+
+        int childEnergy = parents.first().breed() + parents.second().breed();
+
+        return new Animal(parents, dayOfBirth, childEnergy);
+
     }
 
 
@@ -59,7 +68,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
         return childrenCounter;
     }
 
-    public void incrementChildrenCounter() {
+    private void incrementChildrenCounter() {
         this.childrenCounter+=1;
     }
 
@@ -76,8 +85,15 @@ public class Animal implements IMapElement, Comparable<Animal> {
         this.energy += energy;
     }
 
-    public void loseEnergy(int energy) {
+    private void looseEnergy(int energy) {
         this.energy -= energy;
+    }
+
+    private int breed() {
+        incrementChildrenCounter();
+        int looseEnergy = energy / 4;
+        looseEnergy(looseEnergy);
+        return looseEnergy;
     }
 
     private ArrayList<Integer> generateGenotype(){
@@ -90,7 +106,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
         return genotype;
     }
 
-    public int getRandomGen(){
+    private int getRandomGen(){
         int randomIndex = new Random().nextInt(32);
         return genotype.get(randomIndex);
     }
@@ -112,25 +128,25 @@ public class Animal implements IMapElement, Comparable<Animal> {
     }
 
 
-    public void move(int rotation){
-        int x = position.x();
-        int y = position.y();
+    public void move(){
+        looseEnergy(energyLossPerMove);
 
+        int rotation = getRandomGen();
+
+        Vector2d oldPosition = position;
         switch (rotation) {
             case 0 -> {
                 if (canMoveTo(position.add(direction.toUnitVector())) )
                 {
                     position = position.add(direction.toUnitVector());
-                    positionChanged(new Vector2d(x,y));
+                    positionChanged(oldPosition);
 
                 }
-
-
             }
             case 4 -> {
                 if (canMoveTo(position.subtract(direction.toUnitVector()))) {
                     position = position.subtract(direction.toUnitVector());
-                    positionChanged(new Vector2d(x,y));
+                    positionChanged(oldPosition);
                 }
             }
 
@@ -152,51 +168,45 @@ public class Animal implements IMapElement, Comparable<Animal> {
 
     }
 
-
-
     @Override
     public int compareTo(Animal other) {
         return other.energy - this.energy;
     }
 
-    private ArrayList<Integer> getChildrenGenotype(Animal strongerParent, Animal weakerParent){
+    private ArrayList<Integer> getChildrenGenotype(Pair<Animal> parents){
 
 
         ArrayList<Integer> childrenGenotype = new ArrayList<>();
 
-        int energySum = weakerParent.getEnergy() + strongerParent.getEnergy();
-        int gensTakenFromStronger = (32*strongerParent.getEnergy()/energySum);
+        int energySum = parents.first().getEnergy() + parents.second().getEnergy();
+        int gensFromFirstParent = (32*parents.first().getEnergy() / energySum);
 
-        boolean takeLeftSideFromStronger = new Random().nextBoolean();
+        boolean takeLeftSideFromFirstParent = new Random().nextBoolean();
 
-        if(takeLeftSideFromStronger){
+        if(takeLeftSideFromFirstParent){
             for(int i=0;i<32;i++){
-                if(i<gensTakenFromStronger){
-                    childrenGenotype.add(strongerParent.genotype.get(i));
+                if(i<gensFromFirstParent){
+                    childrenGenotype.add(parents.first().genotype.get(i));
                 }
                 else{
-                    childrenGenotype.add(weakerParent.genotype.get(i));
+                    childrenGenotype.add(parents.second().genotype.get(i));
                 }
 
             }
         }
         else{
             for(int i=0;i<32;i++){
-                if(i<32-gensTakenFromStronger){
-                    childrenGenotype.add(weakerParent.genotype.get(i));
+                if(i<32-gensFromFirstParent){
+                    childrenGenotype.add(parents.second().genotype.get(i));
                 }
                 else{
-                    childrenGenotype.add(strongerParent.genotype.get(i));
+                    childrenGenotype.add(parents.first().genotype.get(i));
                 }
 
             }
         }
         Collections.sort(childrenGenotype);
         return childrenGenotype;
-    }
-
-    private int getChildrenEnergy(Animal mother, Animal father){
-        return ((mother.getEnergy() + father.getEnergy())/4);
     }
 
     public ArrayList<Integer> getGenotype() {

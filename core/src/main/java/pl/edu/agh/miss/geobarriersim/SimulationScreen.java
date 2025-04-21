@@ -10,11 +10,13 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import pl.edu.agh.miss.geobarriersim.map.WorldMap;
 import pl.edu.agh.miss.geobarriersim.map.element.Animal;
@@ -42,6 +44,7 @@ public class SimulationScreen implements Screen {
     private Stage stage;
     private TextButton togglePauseButton;
     private Slider simulationSpeedSlider;
+    private Label simulationSpeedLabel;
 
     public SimulationScreen(SimulationSettings settings) {
         this.simulation = new Simulation(settings);
@@ -79,10 +82,20 @@ public class SimulationScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 timeScale = simulationSpeedSlider.getValue();
+                simulationSpeedLabel.setText("Days per one second: " + (int) timeScale);
             }
         });
 
         stage.addActor(simulationSpeedSlider);
+
+        simulationSpeedLabel = new Label("Days per one second: " + (int) timeScale, skin);
+        simulationSpeedLabel.setAlignment(Align.center);
+        simulationSpeedLabel.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 150,  340);
+        simulationSpeedLabel.setSize(400, 30);
+        stage.addActor(simulationSpeedLabel);
+
+
+
     }
 
     private void togglePause() {
