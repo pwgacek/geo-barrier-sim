@@ -8,7 +8,6 @@ import pl.edu.agh.miss.geobarriersim.map.element.Vector2d;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -46,14 +45,13 @@ public class Simulation {
     }
 
     public void simulateOneDay() {
-
-        dayCounter++;
-
         removeDeadAnimals();// usuwanie martwych zwierząt
         moveAnimals();// ruch albo skręt zwierzęcia
         feedAnimals();//jedzenie roślin
         breedAnimals();// rozmnażanie zwierząt
-        addNewGrass();// dodanie nowych roślin
+        growPlants();// dodanie nowych roślin
+
+        dayCounter++;
 
 
     }
@@ -63,7 +61,7 @@ public class Simulation {
     }
 
     private void breedAnimals() {
-        for(List<Animal> animals : worldMap.getAnimals().values()){
+        worldMap.getAnimals().values().stream().parallel().forEach(animals -> {
             long possibleParentsCount = animals.stream()
                 .takeWhile(it -> it.getEnergy() >= settings.getStartEnergy())
                 .count();
@@ -74,7 +72,8 @@ public class Simulation {
                 Animal child = Animal.breed(parents, dayCounter);
                 worldMap.place(child);
             }
-        }
+        });
+
     }
 
 
@@ -104,33 +103,41 @@ public class Simulation {
     }
 
     private void feedAnimals() {
-        for(Map.Entry<Vector2d, List<Animal>> entry : worldMap.getAnimals().entrySet()){
+        worldMap.getAnimals().entrySet().stream().parallel().forEach((entry) -> {
             Vector2d position = entry.getKey();
             List<Animal> animals = entry.getValue();
-            if(worldMap.isPlantGrownAt(position)){
+
+            if (worldMap.isPlantGrownAt(position)) {
                 worldMap.removePlant(position);
 
                 int maxEnergy = animals.getFirst().getEnergy();
                 List<Animal> plantEaters = animals.stream()
-                    .filter(it -> it.getEnergy() == maxEnergy).
-                    toList();
+                    .filter(it -> it.getEnergy() == maxEnergy)
+                    .toList();
 
-                plantEaters.forEach(it -> it.gainEnergy(settings.getEnergyFromPlant() / plantEaters.size()));
+                int energyPerAnimal = settings.getEnergyFromPlant() / plantEaters.size();
+                plantEaters.forEach(it -> it.gainEnergy(energyPerAnimal));
             }
-        }
+        });
+
     }
 
     private void moveAnimals() {
-        worldMap.getAnimalsList().forEach(Animal::move);
+        worldMap.getAnimals().values().stream()
+            .flatMap(it -> new ArrayList<>(it).stream())
+            .forEach(Animal::move);
     }
 
     private void removeDeadAnimals() {
-        for (Animal animal : new ArrayList<>(worldMap.getAnimalsList())) {
-            if (animal.getEnergy() < settings.getEnergyLossPerMove()) {
-                animal.removeObserver(worldMap);
-                worldMap.removeAnimal(animal);
-            }
-        }
+        worldMap.getAnimals().values().stream()
+            .parallel()
+            .flatMap(it -> new ArrayList<>(it).stream())
+            .filter(it -> it.getEnergy() < settings.getEnergyLossPerMove())
+            .forEach(it -> {
+                it.removeObserver(worldMap);
+                worldMap.removeAnimal(it);
+            });
+
     }
 
     public int getDayCounter() {

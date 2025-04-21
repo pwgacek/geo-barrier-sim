@@ -56,7 +56,7 @@ public class WorldMap implements IPositionChangeObserver {
     public void growPlants() {
         plants.values().stream()
             .filter(it -> !it.isGrown() && animals.get(it.position()).isEmpty()  && random.nextInt(10000) < plantGrowChancePer10000)
-            .forEach(it -> {it.setGrown(true);});
+            .forEach(it -> it.setGrown(true));
     }
 
 
@@ -101,17 +101,8 @@ public class WorldMap implements IPositionChangeObserver {
         animals.get(animal.position()).remove(animal);
     }
 
-
-    public List<Animal> getAnimalsList() {
-        return animals.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-    }
-
     public Map<Vector2d, List<Animal>> getAnimals() {
         return animals.entrySet().stream().filter(it -> !it.getValue().isEmpty()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    public Map<Vector2d, Plant> getPlants() {
-        return plants;
     }
 
     public boolean isPlantGrownAt(Vector2d position) {
