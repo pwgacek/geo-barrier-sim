@@ -34,7 +34,7 @@ public class SimulationScreen implements Screen {
     private float timeScale = 50f;  // 20 days per second (1 day per 50 ms)
     private final float cellSize;
 
-    private boolean isPaused = false;
+    private boolean isPaused = true;
     private float simulationTime = 0;  // Accumulated simulation time in days
 
     private ShapeRenderer shapeRenderer;
@@ -60,7 +60,7 @@ public class SimulationScreen implements Screen {
 
         Gdx.input.setInputProcessor(stage);
 
-        togglePauseButton = new TextButton("Stop Simulation", skin);
+        togglePauseButton = new TextButton("Start Simulation", skin);
         togglePauseButton.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 50,  400);
         togglePauseButton.setSize(200, 60);
 

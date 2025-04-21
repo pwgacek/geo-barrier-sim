@@ -32,13 +32,14 @@ public class Simulation {
         int cellsCount = worldMap.getWidth() * worldMap.getHeight();
         int grassCount = (int) (cellsCount * (settings.getInitialGrassPercentage() / 100f));
 
-        List<Vector2d> grassPositions = IntStream.range(0, cellsCount)
-            .mapToObj(i -> new Vector2d(i / worldMap.getHeight(), i % worldMap.getHeight()))
+        List<Integer> grassIndexes = IntStream.range(0, cellsCount)
+            .boxed()
             .collect(Collectors.toList());
 
-        for (int i = 0; i < grassCount; i++) {
-            worldMap.addGrass(grassPositions.remove(rand.nextInt(grassPositions.size())));
-        }
+        Collections.shuffle(grassIndexes);
+
+        grassIndexes = grassIndexes.subList(0, grassCount);
+        grassIndexes.forEach(i -> worldMap.addGrass(new Vector2d(i / worldMap.getHeight(), i % worldMap.getHeight())));
     }
 
     public WorldMap getWorldMap() {
