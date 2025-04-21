@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -42,13 +43,32 @@ public class SimulationScreen implements Screen {
     private final Simulation simulation;
     private Skin skin;
     private Stage stage;
+    private Label dayCounterLabel;
     private TextButton togglePauseButton;
     private Slider simulationSpeedSlider;
     private Label simulationSpeedLabel;
+    private final Color backgroundColor = Color.valueOf("#3b1f15");
+
+
+    private final Vector2d[][] positions;
+    private final Vector2[][] circles;
+    private final Vector2[][] rectangles;
 
     public SimulationScreen(SimulationSettings settings) {
         this.simulation = new Simulation(settings);
         this.cellSize = (float) SCREEN_HEIGHT / settings.getMapSize();
+
+        positions = new Vector2d[simulation.getWorldMap().getWidth()][simulation.getWorldMap().getHeight()];
+        circles = new Vector2[simulation.getWorldMap().getWidth()][simulation.getWorldMap().getHeight()];
+        rectangles = new Vector2[simulation.getWorldMap().getWidth()][simulation.getWorldMap().getHeight()];
+        for (int x = 0; x < simulation.getWorldMap().getWidth(); x++) {
+            for (int y = 0; y < simulation.getWorldMap().getHeight(); y++) {
+                positions[x][y] = new Vector2d(x, y);
+                circles[x][y] = new Vector2(x * cellSize + (cellSize) / 2, y * cellSize + (cellSize - SCREEN_HEIGHT) / 2);
+                rectangles[x][y] = new Vector2(x * cellSize, y * cellSize - SCREEN_HEIGHT / 2f);
+            }
+        }
+
     }
 
     @Override
@@ -60,8 +80,14 @@ public class SimulationScreen implements Screen {
 
         Gdx.input.setInputProcessor(stage);
 
+        dayCounterLabel = new Label("Year: " + (simulation.getDayCounter() / 365) + " Day: " + (simulation.getDayCounter() % 365 + 1) , skin);
+        dayCounterLabel.setFontScale(2);
+        dayCounterLabel.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 150,  440);
+        dayCounterLabel.setSize(400, 30);
+        stage.addActor(dayCounterLabel);
+
         togglePauseButton = new TextButton("Start Simulation", skin);
-        togglePauseButton.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 50,  400);
+        togglePauseButton.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 50,  200);
         togglePauseButton.setSize(200, 60);
 
         togglePauseButton.addListener(new ClickListener() {
@@ -124,42 +150,42 @@ public class SimulationScreen implements Screen {
 
             while (simulationTime >= 1) {
                 simulationTime -= 1;  // Subtract 1 day (advance 1 day in simulation)
+                dayCounterLabel.setText("Year: " + (simulation.getDayCounter() / 365) + " Day: " + (simulation.getDayCounter() % 365 + 1));
                 simulation.simulateOneDay();
             }
 
         }
 
         renderWorldMap(shapeRenderer);
-        stage.act(Gdx.graphics.getDeltaTime());
+        stage.act(delta);
         stage.draw();
     }
 
     private void renderWorldMap(ShapeRenderer shapeRenderer) {
         WorldMap worldMap = simulation.getWorldMap();
-        Color backgroundColor = Color.valueOf("#3b1f15");
 
         shapeRenderer.setColor(backgroundColor);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.rect( 0, - SCREEN_HEIGHT / 2f, cellSize * worldMap.getWidth(), cellSize * worldMap.getHeight());
 
-
+        float radius = cellSize / 2;
         for (int x = 0; x < worldMap.getWidth(); x++) {
             for (int y = 0; y < worldMap.getHeight(); y++) {
-                Optional<IMapElement> optionalIMapElement = worldMap.objectAt(new Vector2d(x, y));
+                Optional<IMapElement> optionalIMapElement = worldMap.objectAt(positions[x][y]);
                 if (optionalIMapElement.isPresent()) {
                     IMapElement mapElement = optionalIMapElement.get();
                     shapeRenderer.setColor(mapElement.getColor());
                     if (mapElement instanceof Animal) {
-                        shapeRenderer.circle(x * cellSize +  (cellSize) / 2 ,y*cellSize + (cellSize - SCREEN_HEIGHT) / 2,cellSize /2);
+                        Vector2 circle = circles[x][y];
+                        shapeRenderer.circle(circle.x,circle.y,radius);
                     } else {
-                        shapeRenderer.rect(x*cellSize, y*cellSize - SCREEN_HEIGHT / 2f, cellSize, cellSize);
+                        Vector2 rectangle = rectangles[x][y];
+                        shapeRenderer.rect(rectangle.x, rectangle.y, cellSize, cellSize);
                     }
                 }
             }
         }
         shapeRenderer.end();
-
-
     }
 
     @Override

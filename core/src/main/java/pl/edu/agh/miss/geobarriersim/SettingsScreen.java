@@ -49,7 +49,7 @@ public class SettingsScreen implements Screen {
         addRow(table, "Energy loss per move", settings::getEnergyLossPerMove, settings::setEnergyLossPerMove,1,1000);
         addRow(table, "Energy from plant", settings::getEnergyFromPlant, settings::setEnergyFromPlant,1,1000);
         addRow(table, "Initial animal count", settings::getInitialAnimalCount, settings::setInitialAnimalCount,2,40000);
-        addRow(table, "Initial grass percentage", settings::getInitialGrassPercentage, settings::setInitialGrassPercentage,1,100);
+        addRow(table, "Initial plant percentage", settings::getInitialPlantPercentage, settings::setInitialPlantPercentage,1,100);
         addRow(table, "Plant growth chance per 10000", settings::getPlantGrowthChancePer10000, settings::setPlantGrowthChancePer10000,1,100);
 
 

@@ -24,22 +24,21 @@ public class Simulation {
 
         Random rand = new Random();
 
-
         for(int i=0;i<settings.getInitialAnimalCount();i++){
             Vector2d position = new Vector2d(rand.nextInt(worldMap.getWidth()), rand.nextInt(worldMap.getHeight()));
             worldMap.place(new Animal(worldMap.getWidth(), worldMap.getHeight(), position, settings.getStartEnergy(), settings.getEnergyLossPerMove()));
         }
         int cellsCount = worldMap.getWidth() * worldMap.getHeight();
-        int grassCount = (int) (cellsCount * (settings.getInitialGrassPercentage() / 100f));
+        int plantCount = (int) (cellsCount * (settings.getInitialPlantPercentage() / 100f));
 
-        List<Integer> grassIndexes = IntStream.range(0, cellsCount)
+        List<Integer> plantIndices = IntStream.range(0, cellsCount)
             .boxed()
             .collect(Collectors.toList());
 
-        Collections.shuffle(grassIndexes);
+        Collections.shuffle(plantIndices);
 
-        grassIndexes = grassIndexes.subList(0, grassCount);
-        grassIndexes.forEach(i -> worldMap.addGrass(new Vector2d(i / worldMap.getHeight(), i % worldMap.getHeight())));
+        plantIndices = plantIndices.subList(0, plantCount);
+        plantIndices.forEach(i -> worldMap.addPlant(new Vector2d(i / worldMap.getHeight(), i % worldMap.getHeight())));
     }
 
     public WorldMap getWorldMap() {
@@ -59,8 +58,8 @@ public class Simulation {
 
     }
 
-    private void addNewGrass() {
-        worldMap.growGrass();
+    private void growPlants() {
+        worldMap.growPlants();
     }
 
     private void breedAnimals() {
@@ -108,38 +107,34 @@ public class Simulation {
         for(Map.Entry<Vector2d, List<Animal>> entry : worldMap.getAnimals().entrySet()){
             Vector2d position = entry.getKey();
             List<Animal> animals = entry.getValue();
-
-            if(worldMap.getGrass().containsKey(position)){
-                worldMap.removeGrass(position);
+            if(worldMap.isPlantGrownAt(position)){
+                worldMap.removePlant(position);
 
                 int maxEnergy = animals.getFirst().getEnergy();
-                List<Animal> grassEaters = animals.stream()
+                List<Animal> plantEaters = animals.stream()
                     .filter(it -> it.getEnergy() == maxEnergy).
                     toList();
 
-                grassEaters.forEach(it -> it.gainEnergy(settings.getEnergyFromPlant() / grassEaters.size()));
+                plantEaters.forEach(it -> it.gainEnergy(settings.getEnergyFromPlant() / plantEaters.size()));
             }
         }
     }
 
     private void moveAnimals() {
-        for(Animal animal : worldMap.getAnimalsList()){
-            animal.move();
-        }
+        worldMap.getAnimalsList().forEach(Animal::move);
     }
 
     private void removeDeadAnimals() {
-        ArrayList<Animal> animalsToRemove = new ArrayList<>();
-        for(Animal animal : worldMap.getAnimalsList()){
-            if(animal.getEnergy()-settings.getEnergyLossPerMove() < 0){
-                animalsToRemove.add(animal);
+        for (Animal animal : new ArrayList<>(worldMap.getAnimalsList())) {
+            if (animal.getEnergy() < settings.getEnergyLossPerMove()) {
+                animal.removeObserver(worldMap);
+                worldMap.removeAnimal(animal);
             }
-        }
-        for(Animal deadAnimal : animalsToRemove){
-            deadAnimal.removeObserver(this.worldMap);
-            worldMap.removeAnimal(deadAnimal);
         }
     }
 
+    public int getDayCounter() {
+        return dayCounter;
+    }
 
 }

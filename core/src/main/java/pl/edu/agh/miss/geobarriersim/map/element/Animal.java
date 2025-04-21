@@ -140,7 +140,6 @@ public class Animal implements IMapElement, Comparable<Animal> {
                 {
                     position = position.add(direction.toUnitVector());
                     positionChanged(oldPosition);
-
                 }
             }
             case 4 -> {

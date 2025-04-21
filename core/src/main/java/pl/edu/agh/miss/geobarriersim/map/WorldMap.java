@@ -2,7 +2,7 @@ package pl.edu.agh.miss.geobarriersim.map;
 
 
 import pl.edu.agh.miss.geobarriersim.map.element.Animal;
-import pl.edu.agh.miss.geobarriersim.map.element.Grass;
+import pl.edu.agh.miss.geobarriersim.map.element.Plant;
 import pl.edu.agh.miss.geobarriersim.map.element.IMapElement;
 import pl.edu.agh.miss.geobarriersim.map.element.Vector2d;
 
@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,29 +20,29 @@ import java.util.stream.Collectors;
 public class WorldMap implements IPositionChangeObserver {
     private final int width;
     private final int height;
-    private final int grassGrowChancePer10000;
+    private final int plantGrowChancePer10000;
     private final Map<Vector2d, ArrayList<Animal>> animals;
 
 
-    private final Map<Vector2d, Grass> grass;
-    private final Map<Vector2d, Grass> noGrass;
+    private final Map<Vector2d, Plant> plants;
+
+    private final Random random = new Random();
 
 
-    public WorldMap(int size, int grassGrowChancePer100000) {
+    public WorldMap(int size, int plantGrowChancePer100000) {
         this.animals = new HashMap<>();
 
         this.width = size * 4 / 3;
         this.height = size;
-        this.grassGrowChancePer10000 = grassGrowChancePer100000;
+        this.plantGrowChancePer10000 = plantGrowChancePer100000;
 
-        this.grass = new HashMap<>();
-        this.noGrass = new HashMap<>();
+        this.plants = new HashMap<>();
 
         for(int y = 0; y < this.height; y++){
             for(int x = 0; x < this.width; x++){
                 Vector2d vector = new Vector2d(x,y);
-                Grass grass = new Grass(vector);
-                noGrass.put(vector,grass);
+                Plant plant = new Plant(vector);
+                plants.put(vector,plant);
                 animals.put(vector,new ArrayList<>());
             }
         }
@@ -54,29 +53,20 @@ public class WorldMap implements IPositionChangeObserver {
     }
     public int getWidth() { return width;}
 
-    public void growGrass() {
-        Iterator<Map.Entry<Vector2d, Grass>> noGrassIterator = noGrass.entrySet().iterator();
-        while (noGrassIterator.hasNext()) {
-            Map.Entry<Vector2d, Grass> noGrassEntry = noGrassIterator.next();
-            if(animals.get(noGrassEntry.getKey()).isEmpty()){
-                if (new Random().nextInt(10000) < grassGrowChancePer10000){
-                    noGrassIterator.remove();
-                    grass.put(noGrassEntry.getKey(),noGrassEntry.getValue());
-                }
-            }
-        }
+    public void growPlants() {
+        plants.values().stream()
+            .filter(it -> !it.isGrown() && animals.get(it.position()).isEmpty()  && random.nextInt(10000) < plantGrowChancePer10000)
+            .forEach(it -> {it.setGrown(true);});
     }
 
-    public void addGrass(Vector2d position) {
-        Grass g = this.noGrass.get(position);
-        grass.put(position,g);
-        this.noGrass.remove(position);
+
+    public void addPlant(Vector2d position) {
+        plants.get(position).setGrown(true);
     }
 
-    public void removeGrass(Vector2d position){
-        Grass grass = this.grass.get(position);
-        noGrass.put(position,grass);
-        this.grass.remove(position);
+    public void removePlant(Vector2d position){
+        plants.get(position).setGrown(false);
+
     }
 
     public void place(Animal animal) {
@@ -91,8 +81,8 @@ public class WorldMap implements IPositionChangeObserver {
 
     public Optional<IMapElement> objectAt(Vector2d position) {
         if(!animals.get(position).isEmpty()) return Optional.of(animals.get(position).getFirst()); //todo tutaj był index out of bound 0 of 0
-        if(grass.containsKey(position)) return Optional.of(grass.get(position));
-        return Optional.empty();
+        Plant plant = plants.get(position);
+        return plant.isGrown() ? Optional.of(plant) : Optional.empty();
     }
 
 
@@ -120,8 +110,12 @@ public class WorldMap implements IPositionChangeObserver {
         return animals.entrySet().stream().filter(it -> !it.getValue().isEmpty()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    public Map<Vector2d, Grass> getGrass() {
-        return grass;
+    public Map<Vector2d, Plant> getPlants() {
+        return plants;
+    }
+
+    public boolean isPlantGrownAt(Vector2d position) {
+        return plants.get(position).isGrown();
     }
 
 
