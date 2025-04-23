@@ -25,7 +25,7 @@ public class Simulation {
 
         for(int i=0;i<settings.getInitialAnimalCount();i++){
             Vector2d position = new Vector2d(rand.nextInt(worldMap.getWidth()), rand.nextInt(worldMap.getHeight()));
-            worldMap.place(new Animal(worldMap.getWidth(), worldMap.getHeight(), position, settings.getStartEnergy(), settings.getEnergyLossPerMove()));
+            worldMap.place(new Animal(worldMap, position, settings.getStartEnergy(), settings.getEnergyLossPerMove()));
         }
         int cellsCount = worldMap.getWidth() * worldMap.getHeight();
         int plantCount = (int) (cellsCount * (settings.getInitialPlantPercentage() / 100f));
@@ -133,10 +133,7 @@ public class Simulation {
             .parallel()
             .flatMap(it -> new ArrayList<>(it).stream())
             .filter(it -> it.getEnergy() < settings.getEnergyLossPerMove())
-            .forEach(it -> {
-                it.removeObserver(worldMap);
-                worldMap.removeAnimal(it);
-            });
+            .forEach(worldMap::removeAnimal);
 
     }
 

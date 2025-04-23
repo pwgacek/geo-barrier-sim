@@ -1,6 +1,7 @@
 package pl.edu.agh.miss.geobarriersim.map.element;
 import com.badlogic.gdx.graphics.Color;
 import pl.edu.agh.miss.geobarriersim.map.IPositionChangeObserver;
+import pl.edu.agh.miss.geobarriersim.map.WorldMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,8 +11,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
 
     private MapDirection direction ;
     private Vector2d position;
-    private final int worldWidth;
-    private final int worldHeight;
+    private final WorldMap worldMap;
     private final ArrayList<IPositionChangeObserver> observerList;
     private int energy;
     private final ArrayList<Integer> genotype;
@@ -21,9 +21,8 @@ public class Animal implements IMapElement, Comparable<Animal> {
     private int childrenCounter;
 
 
-    public Animal(int worldWidth, int worldHeight, Vector2d initialPosition, int startEnergy, int energyLossPerMove){
-        this.worldWidth = worldWidth;
-        this.worldHeight = worldHeight;
+    public Animal(WorldMap worldMap, Vector2d initialPosition, int startEnergy, int energyLossPerMove){
+        this.worldMap = worldMap;
         this.position = initialPosition;
         this.direction = MapDirection.NORTH.generateMapDirection();
         observerList = new ArrayList<>();
@@ -36,8 +35,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
     }
 
     private Animal(Pair<Animal> parents, int dateOfBirth, int startEnergy){
-        this.worldWidth = parents.first().worldWidth;
-        this.worldHeight = parents.first().worldHeight;
+        this.worldMap = parents.first().worldMap;
         this.position = parents.first().position;
         this.direction = MapDirection.NORTH.generateMapDirection();
         observerList = new ArrayList<>();
@@ -122,11 +120,6 @@ public class Animal implements IMapElement, Comparable<Animal> {
         return new Color(other, other, blue, 1f);
     }
 
-    private boolean canMoveTo(Vector2d position) {
-        return position.x() < worldWidth && position.x() >= 0
-                && position.y() < worldHeight && position.y() >= 0;
-    }
-
 
     public void move(){
         looseEnergy(energyLossPerMove);
@@ -136,14 +129,14 @@ public class Animal implements IMapElement, Comparable<Animal> {
         Vector2d oldPosition = position;
         switch (rotation) {
             case 0 -> {
-                if (canMoveTo(position.add(direction.toUnitVector())) )
+                if (worldMap.canMoveTo(oldPosition, position.add(direction.toUnitVector())) )
                 {
                     position = position.add(direction.toUnitVector());
                     positionChanged(oldPosition);
                 }
             }
             case 4 -> {
-                if (canMoveTo(position.subtract(direction.toUnitVector()))) {
+                if (worldMap.canMoveTo(oldPosition, position.subtract(direction.toUnitVector()))) {
                     position = position.subtract(direction.toUnitVector());
                     positionChanged(oldPosition);
                 }

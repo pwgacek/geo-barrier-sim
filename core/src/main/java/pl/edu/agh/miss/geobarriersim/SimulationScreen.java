@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -153,12 +154,33 @@ public class SimulationScreen implements Screen {
                 dayCounterLabel.setText("Year: " + (simulation.getDayCounter() / 365) + " Day: " + (simulation.getDayCounter() % 365 + 1));
                 simulation.simulateOneDay();
             }
-
+        } else {
+            if (Gdx.input.isButtonPressed(Input.Buttons.LEFT) || Gdx.input.isButtonPressed(Input.Buttons.RIGHT)) {
+                Vector2 worldPos =  getMouseCoordinates();
+                int x = (int) (worldPos.x / cellSize);
+                int y = (int) ((worldPos.y + SCREEN_HEIGHT / 2f) / cellSize);
+                WorldMap worldMap = simulation.getWorldMap();
+                if (x >= 0 && x < worldMap.getWidth() && y >= 0 && y < worldMap.getHeight()) {
+                    if(Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+                        worldMap.addMountain(new Vector2d(x, y));
+                    } else {
+                        worldMap.removeMountain(new Vector2d(x, y));
+                    }
+                }
+            }
         }
+
 
         renderWorldMap(shapeRenderer);
         stage.act(delta);
         stage.draw();
+    }
+
+    private Vector2 getMouseCoordinates() {
+        float screenX = Gdx.input.getX();
+        float screenY = Gdx.input.getY();
+        Vector3 unprojected = camera.unproject(new Vector3(screenX, screenY, 0f));
+        return new Vector2(unprojected.x, unprojected.y);
     }
 
     private void renderWorldMap(ShapeRenderer shapeRenderer) {

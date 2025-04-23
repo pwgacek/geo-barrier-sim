@@ -10,10 +10,10 @@ public class SimulationSettings {
     private int plantGrowthChancePer10000;
 
     public SimulationSettings() {
-        this.mapSize = 200;
+        this.mapSize = 100;
         this.startEnergy = 100;
         this.energyLossPerMove = 1;
-        this.energyFromPlant = 100;
+        this.energyFromPlant = 50;
         this.initialAnimalCount = 50;
         this.initialPlantPercentage = 75;
         this.plantGrowthChancePer10000 = 5;
