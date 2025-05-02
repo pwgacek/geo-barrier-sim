@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class Simulation {
     private int dayCounter = 0;
@@ -27,17 +26,7 @@ public class Simulation {
             Vector2d position = new Vector2d(rand.nextInt(worldMap.getWidth()), rand.nextInt(worldMap.getHeight()));
             worldMap.place(new Animal(worldMap, position, settings.getStartEnergy(), settings.getEnergyLossPerMove()));
         }
-        int cellsCount = worldMap.getWidth() * worldMap.getHeight();
-        int plantCount = (int) (cellsCount * (settings.getInitialPlantPercentage() / 100f));
-
-        List<Integer> plantIndices = IntStream.range(0, cellsCount)
-            .boxed()
-            .collect(Collectors.toList());
-
-        Collections.shuffle(plantIndices);
-
-        plantIndices = plantIndices.subList(0, plantCount);
-        plantIndices.forEach(i -> worldMap.addPlant(new Vector2d(i / worldMap.getHeight(), i % worldMap.getHeight())));
+        worldMap.growPlantsWithProbability(settings.getInitialPlantPercentage() / 100f);
     }
 
     public WorldMap getWorldMap() {

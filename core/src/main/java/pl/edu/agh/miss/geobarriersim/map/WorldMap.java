@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class WorldMap implements IPositionChangeObserver {
     private final int width;
     private final int height;
-    private final int plantGrowChancePer10000;
+    private final double plantGrowChance;
     private final Map<Vector2d, ArrayList<Animal>> animals;
 
 
@@ -34,7 +34,7 @@ public class WorldMap implements IPositionChangeObserver {
 
         this.width = size * 4 / 3;
         this.height = size;
-        this.plantGrowChancePer10000 = plantGrowChancePer100000;
+        this.plantGrowChance = plantGrowChancePer100000 / 10000f;
 
         this.plants = new HashMap<>();
         this.mountains = new HashMap<>();
@@ -42,7 +42,7 @@ public class WorldMap implements IPositionChangeObserver {
         for(int y = 0; y < this.height; y++){
             for(int x = 0; x < this.width; x++){
                 Vector2d vector = new Vector2d(x,y);
-                Plant plant = new Plant(vector);
+                Plant plant = new Plant(vector, 2 - (2f * y / height));
                 plants.put(vector,plant);
                 animals.put(vector,new ArrayList<>());
             }
@@ -56,13 +56,15 @@ public class WorldMap implements IPositionChangeObserver {
 
     public void growPlants() {
         plants.values().stream()
-            .filter(it -> !it.isGrown() && animals.get(it.position()).isEmpty()  && random.nextInt(10000) < plantGrowChancePer10000)
+            .filter(it -> !it.isGrown() && animals.get(it.position()).isEmpty()  && random.nextDouble() < (plantGrowChance * it.getGrowthModifier()))
             .forEach(it -> it.setGrown(true));
     }
 
 
-    public void addPlant(Vector2d position) {
-        plants.get(position).setGrown(true);
+    public void growPlantsWithProbability(float probability) {
+        plants.values().stream()
+            .filter(it -> random.nextDouble() < probability * it.getGrowthModifier())
+            .forEach(it -> it.setGrown(true));
     }
 
     public void removePlant(Vector2d position){
