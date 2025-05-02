@@ -45,13 +45,15 @@ public class SettingsScreen implements Screen {
         table.add(label).colspan(4).padBottom(30);
 
 
-        addRow(table, "Map size", settings::getMapSize, settings::setMapSize,10,200);
-        addRow(table, "Start energy", settings::getStartEnergy, settings::setStartEnergy,1,1000);
-        addRow(table, "Energy loss per move", settings::getEnergyLossPerMove, settings::setEnergyLossPerMove,1,1000);
-        addRow(table, "Energy from plant", settings::getEnergyFromPlant, settings::setEnergyFromPlant,1,1000);
-        addRow(table, "Initial animal count", settings::getInitialAnimalCount, settings::setInitialAnimalCount,2,40000);
-        addRow(table, "Initial plant percentage", settings::getInitialPlantPercentage, settings::setInitialPlantPercentage,1,100);
-        addRow(table, "Plant growth chance per 10000", settings::getPlantGrowthChancePer10000, settings::setPlantGrowthChancePer10000,1,100);
+        addRow(table, "Map size", settings::getMapSize, settings::setMapSize,10,200, 1);
+        addRow(table, "Max animal energy", settings::getMaxEnergy, settings::setMaxEnergy,1,1000, 1);
+        addRow(table, "Energy loss per move", settings::getEnergyLossPerMove, settings::setEnergyLossPerMove,1,1000, 1);
+        addRow(table, "Energy from plant", settings::getEnergyFromPlant, settings::setEnergyFromPlant,1,1000, 1);
+        addRow(table, "Breeding cooldown in days", settings::getBreedingCooldown, settings::setBreedingCooldown,1,1000, 1);
+        addRow(table, "Average animal lifespan in days", settings::getAverageLifespan, settings::setAverageLifespan,100,10000,100);
+        addRow(table, "Initial animal count", settings::getInitialAnimalCount, settings::setInitialAnimalCount,2,1000,1);
+        addRow(table, "Initial plant percentage", settings::getInitialPlantPercentage, settings::setInitialPlantPercentage,1,100,1);
+        addRow(table, "Plant growth chance per 10000", settings::getPlantGrowthChancePer10000, settings::setPlantGrowthChancePer10000,1,100, 1);
 
 
         TextButton startButton = getTextButton(game);
@@ -74,7 +76,7 @@ public class SettingsScreen implements Screen {
         return startButton;
     }
 
-    private void addRow(Table table, String title, Supplier<Integer> getter, Consumer<Integer> setter, int minValue, int maxValue) {
+    private void addRow(Table table, String title, Supplier<Integer> getter, Consumer<Integer> setter, int minValue, int maxValue, int changeValue) {
         Label.LabelStyle labelStyle = new Label.LabelStyle(Fonts.getFont(17), Color.WHITE);
 
         Label titleLabel = new Label(title, labelStyle);
@@ -89,7 +91,7 @@ public class SettingsScreen implements Screen {
             @Override
             public void run() {
                 if (getter.get() < maxValue) {
-                    setter.accept(getter.get() + 1);
+                    setter.accept(getter.get() + changeValue);
                     valueLabel.setText(String.valueOf(getter.get()));
                 }
             }
@@ -99,7 +101,7 @@ public class SettingsScreen implements Screen {
             @Override
             public void run() {
                 if (getter.get() > minValue) {
-                    setter.accept(getter.get() - 1);
+                    setter.accept(getter.get() - changeValue);
                     valueLabel.setText(String.valueOf(getter.get()));
                 }
             }
@@ -109,7 +111,7 @@ public class SettingsScreen implements Screen {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if (getter.get() < maxValue) {
-                    setter.accept(getter.get() + 1);
+                    setter.accept(getter.get() + changeValue);
                     valueLabel.setText(String.valueOf(getter.get()));
                 }
 
@@ -127,7 +129,7 @@ public class SettingsScreen implements Screen {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if (getter.get() > minValue) {
-                    setter.accept(getter.get() - 1);
+                    setter.accept(getter.get() - changeValue);
                     valueLabel.setText(String.valueOf(getter.get()));
                 }
 

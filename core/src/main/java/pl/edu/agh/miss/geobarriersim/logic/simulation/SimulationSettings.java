@@ -2,18 +2,22 @@ package pl.edu.agh.miss.geobarriersim.logic.simulation;
 
 public class SimulationSettings {
     private int mapSize;
-    private int startEnergy;
+    private int maxEnergy;
     private int energyLossPerMove;
     private int energyFromPlant;
+    private int breedingCooldown;
+    private int averageLifespan;
     private int initialAnimalCount;
     private int initialPlantPercentage;
     private int plantGrowthChancePer10000;
 
     public SimulationSettings() {
         this.mapSize = 100;
-        this.startEnergy = 100;
+        this.maxEnergy = 200;
         this.energyLossPerMove = 1;
         this.energyFromPlant = 50;
+        this.breedingCooldown = 10;
+        this.averageLifespan = 5000;
         this.initialAnimalCount = 50;
         this.initialPlantPercentage = 75;
         this.plantGrowthChancePer10000 = 5;
@@ -27,12 +31,12 @@ public class SimulationSettings {
         this.mapSize = mapSize;
     }
 
-    public int getStartEnergy() {
-        return startEnergy;
+    public int getMaxEnergy() {
+        return maxEnergy;
     }
 
-    public void setStartEnergy(int startEnergy) {
-        this.startEnergy = startEnergy;
+    public void setMaxEnergy(int maxEnergy) {
+        this.maxEnergy = maxEnergy;
     }
 
     public int getEnergyLossPerMove() {
@@ -49,6 +53,22 @@ public class SimulationSettings {
 
     public void setEnergyFromPlant(int energyFromPlant) {
         this.energyFromPlant = energyFromPlant;
+    }
+
+    public int getBreedingCooldown() {
+        return breedingCooldown;
+    }
+
+    public void setBreedingCooldown(int breedingCooldown) {
+        this.breedingCooldown = breedingCooldown;
+    }
+
+    public int getAverageLifespan() {
+        return averageLifespan;
+    }
+
+    public void setAverageLifespan(int averageLifespan) {
+        this.averageLifespan = averageLifespan;
     }
 
     public int getInitialAnimalCount() {

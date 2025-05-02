@@ -2,6 +2,7 @@ package pl.edu.agh.miss.geobarriersim.logic.map.element;
 import com.badlogic.gdx.graphics.Color;
 import pl.edu.agh.miss.geobarriersim.logic.map.IPositionChangeObserver;
 import pl.edu.agh.miss.geobarriersim.logic.map.WorldMap;
+import pl.edu.agh.miss.geobarriersim.logic.simulation.SimulationSettings;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,22 +16,27 @@ public class Animal implements IMapElement, Comparable<Animal> {
     private final ArrayList<IPositionChangeObserver> observerList;
     private int energy;
     private final ArrayList<Integer> genotype;
-    private final int startEnergy;
+    private final int maxEnergy;
     private final int energyLossPerMove;
     private final int dateOfBirth;
     private int childrenCounter;
+    private int breedingCooldown;
+    private final int averageLifespan;
+    private int lifespan;
 
-
-    public Animal(WorldMap worldMap, Vector2d initialPosition, int startEnergy, int energyLossPerMove){
+    public Animal(WorldMap worldMap, Vector2d initialPosition, SimulationSettings simulationSettings) {
         this.worldMap = worldMap;
         this.position = initialPosition;
         this.direction = MapDirection.NORTH.generateMapDirection();
         observerList = new ArrayList<>();
-        energy =startEnergy;
         genotype = generateGenotype();
         dateOfBirth =0;
-        this.startEnergy = startEnergy;
-        this.energyLossPerMove = energyLossPerMove;
+        this.maxEnergy = simulationSettings.getMaxEnergy();
+        energy = maxEnergy;
+        this.energyLossPerMove = simulationSettings.getEnergyLossPerMove();
+        this.breedingCooldown = simulationSettings.getBreedingCooldown();
+        this.averageLifespan = simulationSettings.getAverageLifespan();
+        this.lifespan = averageLifespan + (int)(new Random().nextGaussian() * averageLifespan / 2);
         childrenCounter = 0;
     }
 
@@ -42,9 +48,23 @@ public class Animal implements IMapElement, Comparable<Animal> {
         this.energy = startEnergy;
         genotype = getChildrenGenotype(parents);
         this.dateOfBirth = dateOfBirth;
-        this.startEnergy = parents.first().startEnergy;
+        this.maxEnergy = parents.first().maxEnergy;
         this.energyLossPerMove = parents.first().energyLossPerMove;
+        this.breedingCooldown = parents.first().breedingCooldown;
+        this.averageLifespan = parents.first().averageLifespan;
+        this.lifespan = averageLifespan + (int)(new Random().nextGaussian() * averageLifespan / 2);
+
         childrenCounter = 0;
+    }
+
+    public boolean isDead(){
+        if (lifespan > 0) lifespan--;
+        return lifespan == 0 || energy <= 0;
+    }
+
+    public boolean canBreed(){
+        if (breedingCooldown > 0) breedingCooldown--;
+        return breedingCooldown == 0 && energy >= (int)(0.8 * maxEnergy);
     }
 
     public static Animal breed(Pair<Animal> parents, int dayOfBirth) {
@@ -79,8 +99,8 @@ public class Animal implements IMapElement, Comparable<Animal> {
         return energy;
     }
 
-    public void gainEnergy(int energy) {
-        this.energy += energy;
+    public void eat(int energy) {
+        this.energy  = Math.min(this.energy + energy, maxEnergy);
     }
 
     private void looseEnergy(int energy) {
@@ -91,6 +111,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
         incrementChildrenCounter();
         int looseEnergy = energy / 4;
         looseEnergy(looseEnergy);
+        breedingCooldown = 100;
         return looseEnergy;
     }
 
@@ -112,7 +133,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
 
     @Override
     public Color getColor() {
-        int health = Math.max(0, Math.min(energy, startEnergy));
+        int health = Math.max(0, Math.min(energy, maxEnergy));
 
         float other = health / 100f;
         float blue = 1f;

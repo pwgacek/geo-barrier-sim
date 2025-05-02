@@ -24,7 +24,7 @@ public class Simulation {
 
         for(int i=0;i<settings.getInitialAnimalCount();i++){
             Vector2d position = new Vector2d(rand.nextInt(worldMap.getWidth()), rand.nextInt(worldMap.getHeight()));
-            worldMap.place(new Animal(worldMap, position, settings.getStartEnergy(), settings.getEnergyLossPerMove()));
+            worldMap.place(new Animal(worldMap, position, settings));
         }
         worldMap.growPlantsWithProbability(settings.getInitialPlantPercentage() / 100f);
     }
@@ -52,7 +52,7 @@ public class Simulation {
     private void breedAnimals() {
         worldMap.getAnimals().values().stream().parallel().forEach(animals -> {
             long possibleParentsCount = animals.stream()
-                .takeWhile(it -> it.getEnergy() >= settings.getStartEnergy())
+                .takeWhile(Animal::canBreed)
                 .count();
 
             if(possibleParentsCount > 1){
@@ -97,15 +97,23 @@ public class Simulation {
             List<Animal> animals = entry.getValue();
 
             if (worldMap.isPlantGrownAt(position)) {
-                worldMap.removePlant(position);
-
-                int maxEnergy = animals.getFirst().getEnergy();
                 List<Animal> plantEaters = animals.stream()
-                    .filter(it -> it.getEnergy() == maxEnergy)
+                    .filter(it -> it.getEnergy() != settings.getMaxEnergy())
                     .toList();
+                if (!plantEaters.isEmpty()) {
+                    worldMap.removePlant(position);
 
-                int energyPerAnimal = settings.getEnergyFromPlant() / plantEaters.size();
-                plantEaters.forEach(it -> it.gainEnergy(energyPerAnimal));
+                    int maxEnergy = plantEaters.getFirst().getEnergy();
+
+                    plantEaters = plantEaters.stream()
+                        .filter(it -> it.getEnergy() == maxEnergy)
+                        .toList();
+
+                    int energyPerAnimal = settings.getEnergyFromPlant() / plantEaters.size();
+                    plantEaters.forEach(it -> it.eat(energyPerAnimal));
+                }
+
+
             }
         });
 
@@ -121,7 +129,7 @@ public class Simulation {
         worldMap.getAnimals().values().stream()
             .parallel()
             .flatMap(it -> new ArrayList<>(it).stream())
-            .filter(it -> it.getEnergy() < settings.getEnergyLossPerMove())
+            .filter(Animal::isDead)
             .forEach(worldMap::removeAnimal);
 
     }
