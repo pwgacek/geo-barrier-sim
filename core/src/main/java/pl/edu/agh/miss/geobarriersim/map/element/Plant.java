@@ -11,7 +11,6 @@ public class Plant implements IMapElement {
 
     public Plant(Vector2d position, float growthModifier) {
         this.position = position;
-        System.out.println(growthModifier);
         this.growthModifier = growthModifier;
     }
 

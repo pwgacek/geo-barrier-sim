@@ -3,6 +3,7 @@ package pl.edu.agh.miss.geobarriersim;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -26,6 +27,7 @@ public class SettingsScreen implements Screen {
     private final Skin skin;
     private final SimulationSettings settings;
 
+
     public SettingsScreen(Game game) {
         stage = new Stage(new ScreenViewport());
         skin  = new Skin(Gdx.files.internal("uiskin.json"));
@@ -38,10 +40,9 @@ public class SettingsScreen implements Screen {
 
         stage.addActor(table);
 
-        Label label = new Label("Settings", skin);
-        label.setFontScale(3,3);
+
+        Label label = new Label("Settings", new Label.LabelStyle(Fonts.getFont(48), Color.WHITE));
         table.add(label).colspan(4).padBottom(30);
-        table.row();
 
 
         addRow(table, "Map size", settings::getMapSize, settings::setMapSize,10,200);
@@ -55,7 +56,8 @@ public class SettingsScreen implements Screen {
 
         TextButton startButton = getTextButton(game);
 
-        table.add(startButton).colspan(4).pad(20);
+        table.row();
+        table.add(startButton).colspan(4).width(150).padTop(50);
     }
 
     private TextButton getTextButton(Game game) {
@@ -73,9 +75,11 @@ public class SettingsScreen implements Screen {
     }
 
     private void addRow(Table table, String title, Supplier<Integer> getter, Consumer<Integer> setter, int minValue, int maxValue) {
-        Label titleLabel = new Label(title, skin);
+        Label.LabelStyle labelStyle = new Label.LabelStyle(Fonts.getFont(17), Color.WHITE);
+
+        Label titleLabel = new Label(title, labelStyle);
         titleLabel.setWrap(true);
-        Label valueLabel = new Label(Integer.toString(getter.get()), skin);
+        Label valueLabel = new Label(Integer.toString(getter.get()), labelStyle);
         valueLabel.setAlignment(Align.center);
         TextButton minusButton = new TextButton("-", skin);
         TextButton plusButton = new TextButton("+", skin);
@@ -137,14 +141,14 @@ public class SettingsScreen implements Screen {
             }
         });
 
+        table.row().height(40);
 
 
-        table.add(titleLabel).width(150);
-        table.add(minusButton).width(28).padLeft(80);
-        table.add(valueLabel).width(80).pad(10);
-        table.add(plusButton).width(28).padRight(10);
+        table.add(titleLabel).width(180).padLeft(20);
+        table.add(minusButton).width(28).height(28).padLeft(60);
+        table.add(valueLabel).width(80);
+        table.add(plusButton).width(28).height(28).padRight(10);
 
-        table.row();
     }
 
     @Override

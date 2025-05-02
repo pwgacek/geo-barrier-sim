@@ -81,8 +81,7 @@ public class SimulationScreen implements Screen {
 
         Gdx.input.setInputProcessor(stage);
 
-        dayCounterLabel = new Label("Year: " + (simulation.getDayCounter() / 365) + " Day: " + (simulation.getDayCounter() % 365 + 1) , skin);
-        dayCounterLabel.setFontScale(2);
+        dayCounterLabel = new Label("Year: " + (simulation.getDayCounter() / 365) + " Day: " + (simulation.getDayCounter() % 365 + 1) , new Label.LabelStyle(Fonts.getFont(48), Color.WHITE));
         dayCounterLabel.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 150,  440);
         dayCounterLabel.setSize(400, 30);
         stage.addActor(dayCounterLabel);
@@ -115,7 +114,7 @@ public class SimulationScreen implements Screen {
 
         stage.addActor(simulationSpeedSlider);
 
-        simulationSpeedLabel = new Label("Days per one second: " + (int) timeScale, skin);
+        simulationSpeedLabel = new Label("Days per one second: " + (int) timeScale, new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
         simulationSpeedLabel.setAlignment(Align.center);
         simulationSpeedLabel.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 150,  340);
         simulationSpeedLabel.setSize(400, 30);
@@ -249,6 +248,7 @@ public class SimulationScreen implements Screen {
     public void dispose() {
         stage.dispose();
         skin.dispose();
+        Fonts.dispose();
     }
 
     // other Screen methods: render, resize, hide, dispose...
