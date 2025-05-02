@@ -1,4 +1,4 @@
-package pl.edu.agh.miss.geobarriersim;
+package pl.edu.agh.miss.geobarriersim.gui;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
@@ -17,7 +17,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.Graphics;
-import pl.edu.agh.miss.geobarriersim.simulation.SimulationSettings;
+import pl.edu.agh.miss.geobarriersim.logic.simulation.SimulationSettings;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;

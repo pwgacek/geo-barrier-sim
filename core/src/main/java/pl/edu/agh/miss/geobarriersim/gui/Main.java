@@ -1,4 +1,4 @@
-package pl.edu.agh.miss.geobarriersim;
+package pl.edu.agh.miss.geobarriersim.gui;
 
 import com.badlogic.gdx.Game;
 

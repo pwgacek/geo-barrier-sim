@@ -1,7 +1,7 @@
-package pl.edu.agh.miss.geobarriersim.map.element;
+package pl.edu.agh.miss.geobarriersim.logic.map.element;
 import com.badlogic.gdx.graphics.Color;
-import pl.edu.agh.miss.geobarriersim.map.IPositionChangeObserver;
-import pl.edu.agh.miss.geobarriersim.map.WorldMap;
+import pl.edu.agh.miss.geobarriersim.logic.map.IPositionChangeObserver;
+import pl.edu.agh.miss.geobarriersim.logic.map.WorldMap;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -1,4 +1,4 @@
-package pl.edu.agh.miss.geobarriersim.map.element;
+package pl.edu.agh.miss.geobarriersim.logic.map.element;
 
 import java.util.Random;
 

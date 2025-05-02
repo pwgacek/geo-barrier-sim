@@ -1,4 +1,4 @@
-package pl.edu.agh.miss.geobarriersim.simulation;
+package pl.edu.agh.miss.geobarriersim.logic.simulation;
 
 public class SimulationSettings {
     private int mapSize;

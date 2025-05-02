@@ -1,4 +1,4 @@
-package pl.edu.agh.miss.geobarriersim;
+package pl.edu.agh.miss.geobarriersim.gui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -20,12 +20,12 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import pl.edu.agh.miss.geobarriersim.map.WorldMap;
-import pl.edu.agh.miss.geobarriersim.map.element.Animal;
-import pl.edu.agh.miss.geobarriersim.map.element.IMapElement;
-import pl.edu.agh.miss.geobarriersim.map.element.Vector2d;
-import pl.edu.agh.miss.geobarriersim.simulation.Simulation;
-import pl.edu.agh.miss.geobarriersim.simulation.SimulationSettings;
+import pl.edu.agh.miss.geobarriersim.logic.map.WorldMap;
+import pl.edu.agh.miss.geobarriersim.logic.map.element.Animal;
+import pl.edu.agh.miss.geobarriersim.logic.map.element.IMapElement;
+import pl.edu.agh.miss.geobarriersim.logic.map.element.Vector2d;
+import pl.edu.agh.miss.geobarriersim.logic.simulation.Simulation;
+import pl.edu.agh.miss.geobarriersim.logic.simulation.SimulationSettings;
 
 import java.util.Optional;
 

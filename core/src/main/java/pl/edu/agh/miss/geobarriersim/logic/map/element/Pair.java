@@ -1,4 +1,4 @@
-package pl.edu.agh.miss.geobarriersim.map.element;
+package pl.edu.agh.miss.geobarriersim.logic.map.element;
 
 public record Pair<T>( T first, T second) {
 

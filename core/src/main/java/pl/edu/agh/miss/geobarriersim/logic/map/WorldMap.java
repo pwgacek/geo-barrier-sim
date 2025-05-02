@@ -1,11 +1,11 @@
-package pl.edu.agh.miss.geobarriersim.map;
+package pl.edu.agh.miss.geobarriersim.logic.map;
 
 
-import pl.edu.agh.miss.geobarriersim.map.element.Animal;
-import pl.edu.agh.miss.geobarriersim.map.element.Mountain;
-import pl.edu.agh.miss.geobarriersim.map.element.Plant;
-import pl.edu.agh.miss.geobarriersim.map.element.IMapElement;
-import pl.edu.agh.miss.geobarriersim.map.element.Vector2d;
+import pl.edu.agh.miss.geobarriersim.logic.map.element.Animal;
+import pl.edu.agh.miss.geobarriersim.logic.map.element.Mountain;
+import pl.edu.agh.miss.geobarriersim.logic.map.element.Plant;
+import pl.edu.agh.miss.geobarriersim.logic.map.element.IMapElement;
+import pl.edu.agh.miss.geobarriersim.logic.map.element.Vector2d;
 
 import java.util.ArrayList;
 import java.util.Collections;
