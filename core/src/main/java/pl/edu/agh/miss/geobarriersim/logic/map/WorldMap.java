@@ -84,27 +84,10 @@ public class WorldMap implements IPositionChangeObserver {
         mountains.remove(position);
     }
 
-    public boolean canMoveTo(Vector2d oldPosition, Vector2d newPosition) {
+    public boolean canMoveTo(Vector2d newPosition) {
         return newPosition.x() < width && newPosition.x() >= 0
                 && newPosition.y() < height && newPosition.y() >= 0
-                && !mountainHopping(oldPosition, newPosition);
-    }
-
-    public boolean mountainHopping(Vector2d oldPosition, Vector2d newPosition) {
-        return mountains.containsKey(newPosition) ||
-            (isDiagonalMove(oldPosition, newPosition) && crossesMountains(oldPosition, newPosition));
-
-    }
-
-    public boolean crossesMountains(Vector2d oldPosition, Vector2d newPosition) {
-        Vector2d unitVector = newPosition.subtract(oldPosition);
-        Vector2d newPositionByX = oldPosition.addX(unitVector.x());
-        Vector2d newPositionByY = oldPosition.addY(unitVector.y());
-        return mountains.containsKey(newPositionByX) && mountains.containsKey(newPositionByY);
-    }
-
-    public boolean isDiagonalMove(Vector2d oldPosition, Vector2d newPosition) {
-        return oldPosition.x() != newPosition.x() && oldPosition.y() != newPosition.y();
+                && !mountains.containsKey(newPosition);
     }
 
     public void place(Animal animal) {
@@ -151,6 +134,10 @@ public class WorldMap implements IPositionChangeObserver {
     public boolean isPlantGrownAt(Vector2d position) {
         return plants.get(position).isGrown();
     }
-
-
+    public boolean isAnimalAt(Vector2d position) {
+        return !animals.get(position).isEmpty();
+    }
+    public boolean isOtherAnimalAt(Animal animal) {
+        return animals.get(animal.position()).stream().anyMatch(it -> it != animal);
+    }
 }

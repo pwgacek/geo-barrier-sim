@@ -15,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -26,6 +27,7 @@ import pl.edu.agh.miss.geobarriersim.logic.map.element.IMapElement;
 import pl.edu.agh.miss.geobarriersim.logic.map.element.Vector2d;
 import pl.edu.agh.miss.geobarriersim.logic.simulation.Simulation;
 import pl.edu.agh.miss.geobarriersim.logic.simulation.SimulationSettings;
+import pl.edu.agh.miss.geobarriersim.logic.statistics.AverageGenes;
 
 import java.util.Optional;
 
@@ -50,6 +52,9 @@ public class SimulationScreen implements Screen {
     private Label simulationSpeedLabel;
     private final Color backgroundColor = Color.valueOf("#3b1f15");
 
+    private Label avgSpeedLabel;
+    private Label avgRoam;
+    private Label avgHungerThreshold;
 
     private final Vector2d[][] positions;
     private final Vector2[][] circles;
@@ -120,7 +125,20 @@ public class SimulationScreen implements Screen {
         simulationSpeedLabel.setSize(400, 30);
         stage.addActor(simulationSpeedLabel);
 
+        Table statisticsTable = new Table();
+        statisticsTable.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2,  100);
+        stage.addActor(statisticsTable);
 
+        AverageGenes averageGenes = simulation.getAverageGenes();
+
+        statisticsTable.row();
+
+        avgSpeedLabel = new Label("Avg speed: " + String.format("%.3f", averageGenes.avgSpeed())  , new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+        statisticsTable.add(avgSpeedLabel).width(150).height(50);
+        avgRoam = new Label("Avg roam: " + String.format("%.3f", averageGenes.avgRoamTendency())  , new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+        statisticsTable.add(avgRoam).width(150).height(50);
+        avgHungerThreshold = new Label("Avg hunger threshold: " + String.format("%.3f", averageGenes.avgHungerThreshold())  , new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+        statisticsTable.add(avgHungerThreshold).width(150).height(50);
 
     }
 
@@ -151,6 +169,10 @@ public class SimulationScreen implements Screen {
             while (simulationTime >= 1) {
                 simulationTime -= 1;  // Subtract 1 day (advance 1 day in simulation)
                 dayCounterLabel.setText("Year: " + (simulation.getDayCounter() / 365) + " Day: " + (simulation.getDayCounter() % 365 + 1));
+                AverageGenes averageGenes = simulation.getAverageGenes();
+                avgSpeedLabel.setText("Avg speed: " + String.format("%.3f", averageGenes.avgSpeed()));
+                avgRoam.setText("Avg roam: " + String.format("%.3f", averageGenes.avgRoamTendency()));
+                avgHungerThreshold.setText("Avg hunger threshold: " + String.format("%.3f", averageGenes.avgHungerThreshold()));
                 simulation.simulateOneDay();
             }
         } else {

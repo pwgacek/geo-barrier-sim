@@ -2,8 +2,10 @@ package pl.edu.agh.miss.geobarriersim.logic.simulation;
 
 import pl.edu.agh.miss.geobarriersim.logic.map.WorldMap;
 import pl.edu.agh.miss.geobarriersim.logic.map.element.Animal;
+import pl.edu.agh.miss.geobarriersim.logic.map.element.Genes;
 import pl.edu.agh.miss.geobarriersim.logic.map.element.Pair;
 import pl.edu.agh.miss.geobarriersim.logic.map.element.Vector2d;
+import pl.edu.agh.miss.geobarriersim.logic.statistics.AverageGenes;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,7 +60,7 @@ public class Simulation {
             if(possibleParentsCount > 1){
                 Pair<Animal> parents = getParents(animals);
 
-                Animal child = Animal.breed(parents, dayCounter);
+                Animal child = Animal.breed(parents);
                 worldMap.place(child);
             }
         });
@@ -97,21 +99,16 @@ public class Simulation {
             List<Animal> animals = entry.getValue();
 
             if (worldMap.isPlantGrownAt(position)) {
+                worldMap.removePlant(position);
+
+                int maxEnergy = animals.getFirst().getEnergy();
+
                 List<Animal> plantEaters = animals.stream()
-                    .filter(it -> it.getEnergy() != settings.getMaxEnergy())
+                    .filter(it -> it.getEnergy() == maxEnergy)
                     .toList();
-                if (!plantEaters.isEmpty()) {
-                    worldMap.removePlant(position);
 
-                    int maxEnergy = plantEaters.getFirst().getEnergy();
-
-                    plantEaters = plantEaters.stream()
-                        .filter(it -> it.getEnergy() == maxEnergy)
-                        .toList();
-
-                    int energyPerAnimal = settings.getEnergyFromPlant() / plantEaters.size();
-                    plantEaters.forEach(it -> it.eat(energyPerAnimal));
-                }
+                int energyPerAnimal = settings.getEnergyFromPlant() / plantEaters.size();
+                plantEaters.forEach(it -> it.eat(energyPerAnimal));
 
 
             }
@@ -136,6 +133,15 @@ public class Simulation {
 
     public int getDayCounter() {
         return dayCounter;
+    }
+
+    public AverageGenes getAverageGenes() {
+        List<Genes> genes = worldMap.getAnimals().values().stream()
+            .flatMap(List::stream)
+            .map(Animal::getGenes)
+            .toList();
+        return AverageGenes.fromGenesList(genes);
+
     }
 
 }

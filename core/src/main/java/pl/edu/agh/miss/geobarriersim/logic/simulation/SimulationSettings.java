@@ -15,11 +15,11 @@ public class SimulationSettings {
         this.mapSize = 100;
         this.maxEnergy = 200;
         this.energyLossPerMove = 1;
-        this.energyFromPlant = 50;
-        this.breedingCooldown = 10;
+        this.energyFromPlant = 40;
+        this.breedingCooldown = 50;
         this.averageLifespan = 5000;
         this.initialAnimalCount = 50;
-        this.initialPlantPercentage = 75;
+        this.initialPlantPercentage = 50;
         this.plantGrowthChancePer10000 = 5;
     }
 
