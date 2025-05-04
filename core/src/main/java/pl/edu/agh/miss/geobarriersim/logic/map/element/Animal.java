@@ -82,8 +82,8 @@ public class Animal implements IMapElement, Comparable<Animal> {
     }
 
     public static Animal breed(Pair<Animal> parents) {
-        parents.first().breed();
-        parents.second().breed();
+        parents.first().resetCooldown();
+        parents.second().resetCooldown();
 
         return new Animal(parents);
 
@@ -105,7 +105,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
         this.energy -= energy;
     }
 
-    private void breed() {
+    private void resetCooldown() {
         breedingCooldownLeft = breedingCooldown;
     }
 
@@ -127,13 +127,13 @@ public class Animal implements IMapElement, Comparable<Animal> {
         return genes.hungerThreshold >= getEnergyPercentage();
     }
 
-    private Focus[] getPriorities() {
+    private Interest[] getInterests() {
         if (breedingCooldownLeft == 0 && !needsToEat()) {
-            return new Focus[]{Focus.BREEDING, Focus.FOOD, Focus.NOTHING};
+            return new Interest[]{Interest.BREEDING, Interest.FOOD, Interest.ROAMING};
         } else if (needsToEat()) {
-            return new Focus[]{Focus.FOOD, Focus.NOTHING};
+            return new Interest[]{Interest.FOOD, Interest.ROAMING};
         } else {
-            return new Focus[]{Focus.NOTHING};
+            return new Interest[]{Interest.ROAMING};
         }
     }
 
@@ -153,13 +153,12 @@ public class Animal implements IMapElement, Comparable<Animal> {
     }
 
     public void move(){
-        looseEnergy(energyLossPerMove);
+        boolean[] moved = {false};
         if(RANDOM.nextDouble() < genes.speed) {
             Vector2d oldPosition = position;
             List<Vector2d> possibleNewPositions = getPossiblePositions();
-            boolean[] moved = {false};
-            for (Focus focus : getPriorities()) {
-                if (focus == Focus.FOOD) {
+            for (Interest focus : getInterests()) {
+                if (focus == Interest.FOOD) {
                     if (worldMap.isPlantGrownAt(position)) {
                         break;
                     } else {
@@ -170,7 +169,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
                         if (moved[0]) break;
                     }
                 }
-                if (focus == Focus.BREEDING) {
+                if (focus == Interest.BREEDING) {
                     if (worldMap.isOtherAnimalAt(this)) {
                         break;
                     } else {
@@ -181,7 +180,7 @@ public class Animal implements IMapElement, Comparable<Animal> {
                         if (moved[0]) break;
                     }
                 }
-                if (focus == Focus.NOTHING) {
+                if (focus == Interest.ROAMING) {
                     if (wantsToRoam()) {
                         possibleNewPositions.stream()
                             .findAny()
@@ -189,6 +188,8 @@ public class Animal implements IMapElement, Comparable<Animal> {
                     }
                 }
             }
+        } if(!moved[0]) {
+            looseEnergy(energyLossPerMove / 2);
         }
 
 

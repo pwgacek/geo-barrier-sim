@@ -140,4 +140,21 @@ public class WorldMap implements IPositionChangeObserver {
     public boolean isOtherAnimalAt(Animal animal) {
         return animals.get(animal.position()).stream().anyMatch(it -> it != animal);
     }
+
+    public int[][] getTopology() {
+        int[][] positions = new int[width][height];
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Vector2d vector = new Vector2d(x, y);
+                if (mountains.containsKey(vector)) {
+                    positions[x][y] = 1;
+                } else {
+                    positions[x][y] = 0;
+                }
+            }
+        }
+
+        return positions;
+    }
 }

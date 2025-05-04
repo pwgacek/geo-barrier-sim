@@ -1,5 +1,6 @@
 package pl.edu.agh.miss.geobarriersim.logic.simulation;
 
+import pl.edu.agh.miss.geobarriersim.logic.map.TopologyManager;
 import pl.edu.agh.miss.geobarriersim.logic.map.WorldMap;
 import pl.edu.agh.miss.geobarriersim.logic.map.element.Animal;
 import pl.edu.agh.miss.geobarriersim.logic.map.element.Genes;
@@ -17,11 +18,11 @@ public class Simulation {
     private int dayCounter = 0;
     private final WorldMap worldMap;
     private final SimulationSettings settings;
+    private  List<List<Vector2d>> areas;
 
     public Simulation(SimulationSettings settings) {
         this.worldMap = new WorldMap(settings.getMapSize(), settings.getPlantGrowthChancePer10000());
         this.settings = settings;
-
         Random rand = new Random();
 
         for(int i=0;i<settings.getInitialAnimalCount();i++){
@@ -29,6 +30,7 @@ public class Simulation {
             worldMap.place(new Animal(worldMap, position, settings));
         }
         worldMap.growPlantsWithProbability(settings.getInitialPlantPercentage() / 100f);
+        setAreas();
     }
 
     public WorldMap getWorldMap() {
@@ -37,7 +39,7 @@ public class Simulation {
 
     public void simulateOneDay() {
         removeDeadAnimals();// usuwanie martwych zwierząt
-        moveAnimals();// ruch albo skręt zwierzęcia
+        moveAnimals();// ruch zwierzęcia
         feedAnimals();//jedzenie roślin
         breedAnimals();// rozmnażanie zwierząt
         growPlants();// dodanie nowych roślin
@@ -135,13 +137,18 @@ public class Simulation {
         return dayCounter;
     }
 
-    public AverageGenes getAverageGenes() {
-        List<Genes> genes = worldMap.getAnimals().values().stream()
-            .flatMap(List::stream)
-            .map(Animal::getGenes)
-            .toList();
-        return AverageGenes.fromGenesList(genes);
+    public void setAreas() {
+        this.areas = TopologyManager.getAreas(worldMap);
+    }
 
+    public List<AverageGenes> getAverageGenes() {
+        return areas.stream().parallel().map(area -> {
+            List<Genes> genesInArea = worldMap.getAnimals().entrySet().stream().filter(it -> area.contains(it.getKey()))
+                .flatMap(it -> it.getValue().stream())
+                .map(Animal::getGenes)
+                .toList();
+            return AverageGenes.fromGenesList(genesInArea);
+        }).toList();
     }
 
 }

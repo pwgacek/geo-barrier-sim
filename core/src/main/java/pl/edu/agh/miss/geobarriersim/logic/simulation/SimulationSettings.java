@@ -13,14 +13,14 @@ public class SimulationSettings {
 
     public SimulationSettings() {
         this.mapSize = 100;
-        this.maxEnergy = 200;
-        this.energyLossPerMove = 1;
-        this.energyFromPlant = 40;
-        this.breedingCooldown = 50;
+        this.maxEnergy = 1000;
+        this.energyLossPerMove = 5;
+        this.energyFromPlant = 200;
+        this.breedingCooldown = 100;
         this.averageLifespan = 5000;
         this.initialAnimalCount = 50;
         this.initialPlantPercentage = 50;
-        this.plantGrowthChancePer10000 = 5;
+        this.plantGrowthChancePer10000 = 3;
     }
 
     public int getMapSize() {
