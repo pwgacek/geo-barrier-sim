@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -28,6 +29,7 @@ import pl.edu.agh.miss.geobarriersim.logic.map.element.Vector2d;
 import pl.edu.agh.miss.geobarriersim.logic.simulation.Simulation;
 import pl.edu.agh.miss.geobarriersim.logic.simulation.SimulationSettings;
 import pl.edu.agh.miss.geobarriersim.logic.statistics.AverageGenes;
+import pl.edu.agh.miss.geobarriersim.logic.statistics.Statistician;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,15 +38,16 @@ public class SimulationScreen implements Screen {
     private static final int SCREEN_HEIGHT = 1080;
     private static final int SCREEN_WIDTH = 1920;
 
-    private float timeScale = 50f;  // 20 days per second (1 day per 50 ms)
+    private float timeScale = 50f;
     private final float cellSize;
 
     private boolean isPaused = true;
-    private float simulationTime = 0;  // Accumulated simulation time in days
+    private float simulationTime = 0;
 
     private ShapeRenderer shapeRenderer;
     private OrthographicCamera camera;
     private final Simulation simulation;
+    private final Statistician statistician;
     private Skin skin;
     private Stage stage;
     private Label dayCounterLabel;
@@ -55,8 +58,8 @@ public class SimulationScreen implements Screen {
 
     private Table statisticsTable;
     private Label[] avgSpeedLabel;
-    private Label[] avgRoam;
-    private Label[] avgHungerThreshold;
+    private Label[] avgRoamLabel;
+    private Label[] avgHungerThresholdLabel;
 
     private final Vector2d[][] positions;
     private final Vector2[][] circles;
@@ -64,6 +67,7 @@ public class SimulationScreen implements Screen {
 
     public SimulationScreen(SimulationSettings settings) {
         this.simulation = new Simulation(settings);
+        this.statistician = Statistician.getInstance();
         this.cellSize = (float) SCREEN_HEIGHT / settings.getMapSize();
 
         positions = new Vector2d[simulation.getWorldMap().getWidth()][simulation.getWorldMap().getHeight()];
@@ -72,8 +76,8 @@ public class SimulationScreen implements Screen {
         for (int x = 0; x < simulation.getWorldMap().getWidth(); x++) {
             for (int y = 0; y < simulation.getWorldMap().getHeight(); y++) {
                 positions[x][y] = new Vector2d(x, y);
-                circles[x][y] = new Vector2(x * cellSize + (cellSize) / 2, y * cellSize + (cellSize - SCREEN_HEIGHT) / 2);
-                rectangles[x][y] = new Vector2(x * cellSize, y * cellSize - SCREEN_HEIGHT / 2f);
+                circles[x][y] = new Vector2(x * cellSize + (cellSize) / 2, y * cellSize + cellSize / 2);
+                rectangles[x][y] = new Vector2(x * cellSize, y * cellSize);
             }
         }
 
@@ -89,14 +93,8 @@ public class SimulationScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
 
         dayCounterLabel = new Label("Year: " + (simulation.getDayCounter() / 365) + " Day: " + (simulation.getDayCounter() % 365 + 1) , new Label.LabelStyle(Fonts.getFont(48), Color.WHITE));
-        dayCounterLabel.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 150,  440);
-        dayCounterLabel.setSize(400, 30);
-        stage.addActor(dayCounterLabel);
 
         togglePauseButton = new TextButton("Start Simulation", skin);
-        togglePauseButton.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 50,  200);
-        togglePauseButton.setSize(200, 60);
-
         togglePauseButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
@@ -104,12 +102,8 @@ public class SimulationScreen implements Screen {
             }
         });
 
-        stage.addActor(togglePauseButton);
-
         simulationSpeedSlider = new Slider(1, 100, 1, false, skin);
         simulationSpeedSlider.setValue(timeScale);
-        simulationSpeedSlider.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 150,  300);
-        simulationSpeedSlider.setSize(400, 60);
 
         simulationSpeedSlider.addListener(new ChangeListener() {
             @Override
@@ -119,40 +113,75 @@ public class SimulationScreen implements Screen {
             }
         });
 
-        stage.addActor(simulationSpeedSlider);
-
         simulationSpeedLabel = new Label("Days per one second: " + (int) timeScale, new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
         simulationSpeedLabel.setAlignment(Align.center);
-        simulationSpeedLabel.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2 - 150,  340);
-        simulationSpeedLabel.setSize(400, 30);
-        stage.addActor(simulationSpeedLabel);
 
         statisticsTable = new Table();
+        ScrollPane scrollPane = new ScrollPane(statisticsTable);
 
-        statisticsTable.setPosition(cellSize * simulation.getWorldMap().getWidth() + (SCREEN_WIDTH - cellSize * simulation.getWorldMap().getWidth()) / 2,  0);
-        stage.addActor(statisticsTable);
         statisticsTable.top();
-        setupTable();
+        setupStatisticsTable();
+
+        Table rightTable = new Table();
+        rightTable.defaults().pad(50);
+        rightTable.setHeight(SCREEN_HEIGHT);
+        rightTable.setWidth(SCREEN_WIDTH + cellSize * simulation.getWorldMap().getWidth());
+        rightTable.setPosition(0, 0);
+        stage.addActor(rightTable);
+
+        rightTable.top();
+        rightTable.row();
+        rightTable.add(dayCounterLabel);
+        rightTable.row();
+        rightTable.add(simulationSpeedSlider).width(300).padBottom(10);
+        rightTable.row();
+        rightTable.add(simulationSpeedLabel).padTop(10);
+        rightTable.row();
+        rightTable.add(scrollPane).height(500);
+        rightTable.row();
+        rightTable.add(togglePauseButton).width(300).height(50).align(Align.bottom);
 
     }
 
-    private void setupTable() {
+    private void setupStatisticsTable() {
         statisticsTable.clear();
 
         List<AverageGenes> averageGenesList = simulation.getAverageGenes();
 
         avgSpeedLabel = new Label[averageGenesList.size()];
-        avgRoam = new Label[averageGenesList.size()];
-        avgHungerThreshold = new Label[averageGenesList.size()];
+        avgRoamLabel = new Label[averageGenesList.size()];
+        avgHungerThresholdLabel = new Label[averageGenesList.size()];
+
+        statisticsTable.row();
+        Label idLabel = new Label("Id", new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+        idLabel.setAlignment(Align.center);
+        statisticsTable.add(idLabel).width(50).height(50);
+        Label avgSpeedLabel = new Label("Avg speed", new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+        avgSpeedLabel.setAlignment(Align.center);
+        statisticsTable.add(avgSpeedLabel).width(120).height(50);
+        Label avgRoamLabel = new Label("Avg roam", new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+        avgRoamLabel.setAlignment(Align.center);
+        statisticsTable.add(avgRoamLabel).width(120).height(50);
+        Label avgHungerThresholdLabel = new Label("Avg hunger threshold", new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+        avgHungerThresholdLabel.setWrap(true);
+        avgHungerThresholdLabel.setAlignment(Align.center);
+        statisticsTable.add(avgHungerThresholdLabel).width(120).height(50);
+
 
         for (int i = 0; i < averageGenesList.size(); i++ ){
             statisticsTable.row();
-            avgSpeedLabel[i] = new Label("Avg speed: " + String.format("%.3f", averageGenesList.get(i).avgSpeed())  , new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
-            statisticsTable.add(avgSpeedLabel[i]).width(150).height(50);
-            avgRoam[i] = new Label("Avg roam: " + String.format("%.3f", averageGenesList.get(i).avgRoamTendency())  , new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
-            statisticsTable.add(avgRoam[i]).width(150).height(50);
-            avgHungerThreshold[i] = new Label("Avg hunger threshold: " + String.format("%.3f", averageGenesList.get(i).avgHungerThreshold())  , new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
-            statisticsTable.add(avgHungerThreshold[i]).width(150).height(50);
+            Label positionLabel = new Label(String.valueOf(i + 1), new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+            positionLabel.setAlignment(Align.center);
+            statisticsTable.add(positionLabel).width(50).height(50);
+            this.avgSpeedLabel[i] = new Label(String.format("%.3f", averageGenesList.get(i).avgSpeed()), new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+            this.avgSpeedLabel[i].setAlignment(Align.center);
+            statisticsTable.add(this.avgSpeedLabel[i]).width(120).height(50);
+            this.avgRoamLabel[i] = new Label(String.format("%.3f", averageGenesList.get(i).avgRoamTendency()), new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+            this.avgRoamLabel[i].setAlignment(Align.center);
+            statisticsTable.add(this.avgRoamLabel[i]).width(120).height(50);
+            this.avgHungerThresholdLabel[i] = new Label(String.format("%.3f", averageGenesList.get(i).avgHungerThreshold()), new Label.LabelStyle(Fonts.getFont(17), Color.WHITE));
+            this.avgHungerThresholdLabel[i].setAlignment(Align.center);
+            statisticsTable.add(this.avgHungerThresholdLabel[i]).width(120).height(50);
         }
     }
 
@@ -161,7 +190,7 @@ public class SimulationScreen implements Screen {
             isPaused = false;
             togglePauseButton.setText("Stop Simulation");
             simulation.setAreas();
-            setupTable();
+            setupStatisticsTable();
         } else {
             isPaused = true;
             togglePauseButton.setText("Start Simulation");
@@ -171,26 +200,39 @@ public class SimulationScreen implements Screen {
 
 
     public void render(float delta) {
-        Gdx.gl.glClearColor(0.8f, 0.8f, 0.8f, 0f);
+        Gdx.gl.glClearColor(Color.DARK_GRAY.r, Color.DARK_GRAY.g, Color.DARK_GRAY.b, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
         shapeRenderer.setProjectionMatrix(camera.combined);
+
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             togglePause();
         }
 
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            if (isPaused) {
+                Gdx.app.exit();
+            }
+        }
+
+        List<AverageGenes> averageGenesList = simulation.getAverageGenes();
+
+
         if (!isPaused) {
             simulationTime += delta * timeScale;
 
             while (simulationTime >= 1) {
-                simulationTime -= 1;  // Subtract 1 day (advance 1 day in simulation)
+                simulationTime -= 1;
                 simulation.simulateOneDay();
+                averageGenesList = simulation.getAverageGenes();
+                statistician.save(averageGenesList);
             }
         } else {
             if (Gdx.input.isButtonPressed(Input.Buttons.LEFT) || Gdx.input.isButtonPressed(Input.Buttons.RIGHT)) {
                 Vector2 worldPos =  getMouseCoordinates();
                 int x = (int) (worldPos.x / cellSize);
-                int y = (int) ((worldPos.y + SCREEN_HEIGHT / 2f) / cellSize);
+                int y = (int) (worldPos.y / cellSize);
                 WorldMap worldMap = simulation.getWorldMap();
                 if (x >= 0 && x < worldMap.getWidth() && y >= 0 && y < worldMap.getHeight()) {
                     if(Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
@@ -203,11 +245,10 @@ public class SimulationScreen implements Screen {
         }
 
         dayCounterLabel.setText("Year: " + (simulation.getDayCounter() / 365) + " Day: " + (simulation.getDayCounter() % 365 + 1));
-        List<AverageGenes> averageGenesList = simulation.getAverageGenes();
         for (int i = 0; i < averageGenesList.size(); i++ ){
-            avgSpeedLabel[i].setText("Avg speed: " + String.format("%.3f", averageGenesList.get(i).avgSpeed()));
-            avgRoam[i].setText("Avg roam: " + String.format("%.3f", averageGenesList.get(i).avgRoamTendency()));
-            avgHungerThreshold[i].setText("Avg hunger threshold: " + String.format("%.3f", averageGenesList.get(i).avgHungerThreshold()));
+            avgSpeedLabel[i].setText(String.format("%.3f", averageGenesList.get(i).avgSpeed()));
+            avgRoamLabel[i].setText(String.format("%.3f", averageGenesList.get(i).avgRoamTendency()));
+            avgHungerThresholdLabel[i].setText(String.format("%.3f", averageGenesList.get(i).avgHungerThreshold()));
 
         }
 
@@ -228,7 +269,7 @@ public class SimulationScreen implements Screen {
 
         shapeRenderer.setColor(backgroundColor);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.rect( 0, - SCREEN_HEIGHT / 2f, cellSize * worldMap.getWidth(), cellSize * worldMap.getHeight());
+        shapeRenderer.rect( 0, 0, cellSize * worldMap.getWidth(), cellSize * worldMap.getHeight());
 
         float radius = cellSize / 2;
         for (int x = 0; x < worldMap.getWidth(); x++) {
@@ -267,7 +308,7 @@ public class SimulationScreen implements Screen {
 
 
         camera.setToOrtho(false, viewportWidth, viewportHeight);
-        camera.position.set(viewportWidth / 2f, 0, 0);
+        camera.position.set(viewportWidth / 2f, viewportHeight/ 2f, 0);
         camera.update();
     }
 
@@ -292,5 +333,4 @@ public class SimulationScreen implements Screen {
         Fonts.dispose();
     }
 
-    // other Screen methods: render, resize, hide, dispose...
 }

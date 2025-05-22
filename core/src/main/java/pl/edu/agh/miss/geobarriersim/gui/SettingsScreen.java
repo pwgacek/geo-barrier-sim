@@ -69,7 +69,7 @@ public class SettingsScreen implements Screen {
             @Override
             public void changed(ChangeEvent event, com.badlogic.gdx.scenes.scene2d.Actor actor) {
                 Graphics.DisplayMode displayMode = Gdx.graphics.getDisplayMode();
-                Gdx.graphics.setWindowedMode(displayMode.width, displayMode.height);
+                Gdx.graphics.setFullscreenMode(displayMode);
                 game.setScreen(new SimulationScreen(settings));
             }
         });
@@ -158,7 +158,7 @@ public class SettingsScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClearColor(0.8f, 0.8f, 0.8f, 0f);
+        Gdx.gl.glClearColor(Color.DARK_GRAY.r, Color.DARK_GRAY.g, Color.DARK_GRAY.b, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
         stage.draw();
